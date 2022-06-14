@@ -3,15 +3,18 @@ if(NOT ${CMAKE_VERSION} VERSION_LESS "3.1")
 	cmake_policy(SET CMP0054 NEW)
 endif()
 
-# 设置版本号
 project(RELIC C CXX)
 set(PROJECT_VERSION_MAJOR "0")
 set(PROJECT_VERSION_MINOR "6")
 set(PROJECT_VERSION_PATCH "0")
+# PROJECT_VERSION = "0.6.0"
 set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
+
 set(VERSION ${PROJECT_VERSION})
 
 # 设置头文件路径
+# CMAKE_CURRENT_BINARY_DIR 执行cmake命令的位置
+# CMAKE_CURRENT_SOURCE_DIR cmakelists文件的位置
 set(INCLUDE ${CMAKE_CURRENT_BINARY_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/include/low ${CMAKE_CURRENT_SOURCE_DIR}/src/tmpl)
 include_directories(${INCLUDE})
 
@@ -23,7 +26,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 set(WFLAGS "-Wall")
 
 message("\n-- Configuring ${PROJECT_NAME} ${PROJECT_VERSION}...\n")
-
+## 一些提示信息1，展示可用的选项
 message(STATUS "Available switches (default = CHECK, VERBS, DOCUM):\n")
 
 message("   DEBUG=[off|on] Build with debugging support.")
@@ -58,6 +61,8 @@ option(STBIN "Build static binaries" off)
 option(AMALG "Build amalgamation" off)
 option(AUSAN "Build with ASan and UBSan (gcc/clang only)" off)
 
+
+## 一些提示信息2，展示可用的选项
 message(STATUS "Number of times each test or benchmark is ran (default = 50, 1000):\n")
 
 message("   TESTS=n        If n > 0, build automated tests and run them n times.")

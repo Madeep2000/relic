@@ -1,4 +1,4 @@
-# Install script for directory: /home/chase/code/relic
+# Install script for directory: /root/code/relic
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,61 +39,61 @@ endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include/relic" TYPE FILE FILES
-    "/home/chase/code/relic/include/relic.h"
-    "/home/chase/code/relic/include/relic_alloc.h"
-    "/home/chase/code/relic/include/relic_arch.h"
-    "/home/chase/code/relic/include/relic_bc.h"
-    "/home/chase/code/relic/include/relic_bench.h"
-    "/home/chase/code/relic/include/relic_bn.h"
-    "/home/chase/code/relic/include/relic_core.h"
-    "/home/chase/code/relic/include/relic_cp.h"
-    "/home/chase/code/relic/include/relic_dv.h"
-    "/home/chase/code/relic/include/relic_eb.h"
-    "/home/chase/code/relic/include/relic_ec.h"
-    "/home/chase/code/relic/include/relic_ed.h"
-    "/home/chase/code/relic/include/relic_ep.h"
-    "/home/chase/code/relic/include/relic_epx.h"
-    "/home/chase/code/relic/include/relic_err.h"
-    "/home/chase/code/relic/include/relic_fb.h"
-    "/home/chase/code/relic/include/relic_fbx.h"
-    "/home/chase/code/relic/include/relic_fp.h"
-    "/home/chase/code/relic/include/relic_fpx.h"
-    "/home/chase/code/relic/include/relic_label.h"
-    "/home/chase/code/relic/include/relic_md.h"
-    "/home/chase/code/relic/include/relic_mpc.h"
-    "/home/chase/code/relic/include/relic_multi.h"
-    "/home/chase/code/relic/include/relic_pc.h"
-    "/home/chase/code/relic/include/relic_pp.h"
-    "/home/chase/code/relic/include/relic_rand.h"
-    "/home/chase/code/relic/include/relic_test.h"
-    "/home/chase/code/relic/include/relic_types.h"
-    "/home/chase/code/relic/include/relic_util.h"
+    "/root/code/relic/include/relic.h"
+    "/root/code/relic/include/relic_alloc.h"
+    "/root/code/relic/include/relic_arch.h"
+    "/root/code/relic/include/relic_bc.h"
+    "/root/code/relic/include/relic_bench.h"
+    "/root/code/relic/include/relic_bn.h"
+    "/root/code/relic/include/relic_core.h"
+    "/root/code/relic/include/relic_cp.h"
+    "/root/code/relic/include/relic_dv.h"
+    "/root/code/relic/include/relic_eb.h"
+    "/root/code/relic/include/relic_ec.h"
+    "/root/code/relic/include/relic_ed.h"
+    "/root/code/relic/include/relic_ep.h"
+    "/root/code/relic/include/relic_epx.h"
+    "/root/code/relic/include/relic_err.h"
+    "/root/code/relic/include/relic_fb.h"
+    "/root/code/relic/include/relic_fbx.h"
+    "/root/code/relic/include/relic_fp.h"
+    "/root/code/relic/include/relic_fpx.h"
+    "/root/code/relic/include/relic_label.h"
+    "/root/code/relic/include/relic_md.h"
+    "/root/code/relic/include/relic_mpc.h"
+    "/root/code/relic/include/relic_multi.h"
+    "/root/code/relic/include/relic_pc.h"
+    "/root/code/relic/include/relic_pp.h"
+    "/root/code/relic/include/relic_rand.h"
+    "/root/code/relic/include/relic_test.h"
+    "/root/code/relic/include/relic_types.h"
+    "/root/code/relic/include/relic_util.h"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include/relic/low" TYPE FILE FILES
-    "/home/chase/code/relic/include/low/relic_bn_low.h"
-    "/home/chase/code/relic/include/low/relic_dv_low.h"
-    "/home/chase/code/relic/include/low/relic_fb_low.h"
-    "/home/chase/code/relic/include/low/relic_fp_low.h"
-    "/home/chase/code/relic/include/low/relic_fpx_low.h"
+    "/root/code/relic/include/low/relic_bn_low.h"
+    "/root/code/relic/include/low/relic_dv_low.h"
+    "/root/code/relic/include/low/relic_fb_low.h"
+    "/root/code/relic/include/low/relic_fp_low.h"
+    "/root/code/relic/include/low/relic_fpx_low.h"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include/relic" TYPE DIRECTORY FILES "/home/chase/code/relic/build/include/")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include/relic" TYPE DIRECTORY FILES "/root/code/relic/build/include/")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/cmake" TYPE FILE FILES "/home/chase/code/relic/cmake/relic-config.cmake")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/cmake" TYPE FILE FILES "/root/code/relic/cmake/relic-config.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/chase/code/relic/build/src/cmake_install.cmake")
-  include("/home/chase/code/relic/build/test/cmake_install.cmake")
-  include("/home/chase/code/relic/build/bench/cmake_install.cmake")
+  include("/root/code/relic/build/src/cmake_install.cmake")
+  include("/root/code/relic/build/test/cmake_install.cmake")
+  include("/root/code/relic/build/bench/cmake_install.cmake")
 
 endif()
 
@@ -105,5 +105,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/chase/code/relic/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/root/code/relic/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

@@ -43,7 +43,7 @@ int cp_ecdsa_gen(bn_t d, ec_t q) {
 
 	RLC_TRY {
 		bn_new(n);
-
+		
 		ec_curve_get_ord(n);
 		bn_rand_mod(d, n);
 		ec_mul_gen(q, d);
