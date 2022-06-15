@@ -1,0 +1,10 @@
+set(SAMPLE "sample_ecdsa")
+add_executable(${SAMPLE} "${SAMPLE}.c")
+# 链接库
+if (STLIB)
+    target_link_libraries(${SAMPLE} ${RELIC_S})
+else()
+    if (SHLIB)
+        target_link_libraries(${SAMPLE} ${RELIC})
+    endif()
+endif()

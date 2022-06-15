@@ -7,6 +7,7 @@ macro(ADD_MODULE MODULE)
 			target_link_libraries(test_${MODULE} ${RELIC})
 		endif(SHLIB)
 	endif(STLIB)
+	
 	add_test(test_${MODULE} ${SIMUL} ${SIMAR} ${EXECUTABLE_OUTPUT_PATH}/test_${MODULE})
 endmacro(ADD_MODULE)
 

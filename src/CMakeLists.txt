@@ -1,13 +1,20 @@
-string(TOLOWER ${ARITH} ARITH_PATH)
+message("111" ${LOW_SRCS})
+# 字符串转小写
+string(TOLOWER ${ARITH} ARITH_PATH)  
+
+# 判断文件是否存在
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/low/${ARITH_PATH}/CMakeLists.txt")
 	include("${CMAKE_CURRENT_SOURCE_DIR}/low/${ARITH_PATH}/CMakeLists.txt")
 endif()
 
+# 判断文件是否定义
 if (NOT INHERIT)
 	set(INHERIT "easy")
 endif()
 string(TOLOWER ${INHERIT} INHERIT_PATH)
 
+# 返回一个列表变量，列表元素使用分号隔开
+# 核心源文件，库中必须包含的源文件
 set(CORE_SRCS relic_err.c relic_core.c relic_conf.c relic_util.c)
 
 if (ARCH)
@@ -25,6 +32,7 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/rand/relic_rand_${RAND_PATH}.c")
 	list(APPEND CORE_SRCS "rand/relic_rand_${RAND_PATH}.c")
 endif()
 
+# 返回的是一个列表变量
 file(GLOB BN_SRCS bn/*.c)
 file(GLOB DV_SRCS dv/*.c)
 file(GLOB FP_SRCS fp/*.c)
@@ -42,6 +50,7 @@ file(GLOB EC_SRCS ec/*.c)
 file(GLOB PC_SRCS pc/*.c)
 file(GLOB MPC_SRCS mpc/*.c)
 
+# RELIC_SRCS表示的是RELIC库的源文件
 set(RELIC_SRCS ${CORE_SRCS})
 
 if (TESTS GREATER 0)
@@ -162,32 +171,37 @@ endif()
 if (WITH_MPC)
 	list(APPEND RELIC_SRCS ${MPC_SRCS})
 endif()
-
+message("START foreach")
 foreach(SRC ${LOW_SRCS})
-	get_filename_component(SRC ${SRC} NAME_WE)
+	get_filename_component(SRC ${SRC} NAME_WE)  # 获取文件名
+	message(${SRC})
 	set(FILE "${CMAKE_CURRENT_SOURCE_DIR}/low/${ARITH_PATH}/${SRC}")
 	if (EXISTS "${FILE}.c")
 		list(APPEND ARITH_SRCS "${FILE}.c")
-	endif(EXISTS "${FILE}.c")
+	endif()
 	if (EXISTS "${FILE}.s")
 		list(APPEND ARITH_ASMS "${FILE}.s")
-	endif(EXISTS "${FILE}.s")
+	endif()
 	if (NOT EXISTS "${FILE}.c" AND NOT EXISTS "${FILE}.s")
 		if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/low/${INHERIT_PATH}/${SRC}.c")
 			list(APPEND ARITH_SRCS "low/${INHERIT_PATH}/${SRC}.c")
-		else(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/low/${INHERIT_PATH}/${SRC}.c")
+		else()
 			list(APPEND ARITH_SRCS "low/easy/${SRC}.c")
-		endif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/low/${INHERIT_PATH}/${SRC}.c")
-	endif(NOT EXISTS "${FILE}.c" AND NOT EXISTS "${FILE}.s")
+		endif()
+	endif()
 endforeach()
 
 list(APPEND RELIC_SRCS ${ARITH_SRCS})
 
 list(APPEND RELIC_SRCS ${ARITH_ASMS})
+
+# 设置源文件的编译选项
 set_source_files_properties(${ARITH_ASMS} PROPERTIES LANGUAGE C COMPILE_FLAGS "-DASM -x assembler-with-cpp")
 
+# 创建make中类似copy、claen中的目标
 add_custom_target(arith_objs DEPENDS ${ARITH_OBJS})
 
+# 根据系统的版本，将relic库链接到指定的库上
 macro(LINK_LIBS LIBRARY)
 	if(OPSYS STREQUAL LINUX)
 		target_link_libraries(${LIBRARY} rt)
@@ -201,6 +215,7 @@ macro(LINK_LIBS LIBRARY)
 	endif()
 endmacro()
 
+# 生成一个文件，文件内容为 #include "file"，其中file来自inputFiles
 function(AMALGAMATE output inputFiles)
 	file(WRITE "${output}" "// This file is an automatic amalgamation of all relic source files.\n" )
 	FOREACH(file ${inputFiles})
@@ -209,21 +224,25 @@ function(AMALGAMATE output inputFiles)
 endfunction()
 
 if(AMALG)
+	message("AMALG valid...")
 	AMALGAMATE("relic-all.c" "${RELIC_SRCS}${ARITH_OBJS}")
 endif(AMALG)
 
+# 编译动态库
 if (SHLIB)
 	if (AMALG)
 		add_library(${RELIC} SHARED "relic-all.c")
 	else()
 		add_library(${RELIC} SHARED ${RELIC_SRCS} ${ARITH_OBJS})
 	endif()
+	# 链接库之前需要添加依赖，避免找不到符号定义等错误
 	add_dependencies(${RELIC} arith_objs)
 	target_link_libraries(${RELIC} ${ARITH_LIBS})
 	link_libs(${RELIC})
 	install(TARGETS ${RELIC} LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 endif()
 
+# 编译静态库
 if (STLIB)
 	if ()
 		add_library(${RELIC_S} STATIC "relic-all.c")
