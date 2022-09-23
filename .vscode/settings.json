@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "relic.h": "c",
+        "stdio.h": "c",
+        "relic_test.h": "c"
+    }
+}

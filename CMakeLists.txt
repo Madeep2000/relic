@@ -22,7 +22,6 @@ include_directories(${INCLUDE})
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 
-
 set(WFLAGS "-Wall")
 
 message("\n-- Configuring ${PROJECT_NAME} ${PROJECT_VERSION}...\n")

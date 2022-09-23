@@ -1,4 +1,4 @@
-# Install script for directory: /root/code/relic/bench
+# Install script for directory: /home/chase511/code/relic/bench
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
