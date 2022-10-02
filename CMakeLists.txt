@@ -365,3 +365,5 @@ endif(TESTS GREATER 0)
 if(BENCH GREATER 0)
 	add_subdirectory(bench)
 endif(BENCH GREATER 0)
+
+add_subdirectory(sample)

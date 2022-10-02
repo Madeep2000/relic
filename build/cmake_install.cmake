@@ -94,6 +94,7 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   include("/home/chase/code/relic/build/src/cmake_install.cmake")
   include("/home/chase/code/relic/build/test/cmake_install.cmake")
   include("/home/chase/code/relic/build/bench/cmake_install.cmake")
+  include("/home/chase/code/relic/build/sample/cmake_install.cmake")
 
 endif()
 

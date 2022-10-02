@@ -609,8 +609,8 @@ static int ecies(void) {
 
 static int ecdsa(void) {
 	int code = RLC_ERR;
-	bn_t d, r, s;
-	ec_t q;
+	bn_t d, r, s;  // 大整数
+	ec_t q;  // 椭圆曲线的点
 	uint8_t m[5] = { 0, 1, 2, 3, 4 }, h[RLC_MD_LEN];
 
 	bn_null(d);
@@ -625,18 +625,18 @@ static int ecdsa(void) {
 		ec_new(q);
 
 		TEST_CASE("ecdsa signature is correct") {
-			TEST_ASSERT(cp_ecdsa_gen(d, q) == RLC_OK, end);
-			TEST_ASSERT(cp_ecdsa_sig(r, s, m, sizeof(m), 0, d) == RLC_OK, end);
-			TEST_ASSERT(cp_ecdsa_ver(r, s, m, sizeof(m), 0, q) == 1, end);
+			TEST_ASSERT(cp_ecdsa_gen(d, q) == RLC_OK, end);  // 生成公私钥
+			TEST_ASSERT(cp_ecdsa_sig(r, s, m, sizeof(m), 0, d) == RLC_OK, end);  // 签名成功返回0
+			TEST_ASSERT(cp_ecdsa_ver(r, s, m, sizeof(m), 0, q) == 1, end);  // 0表示输入的是消息，验签成功返回1
 			m[0] ^= 1;
-			TEST_ASSERT(cp_ecdsa_ver(r, s, m, sizeof(m), 0, q) == 0, end);
+			TEST_ASSERT(cp_ecdsa_ver(r, s, m, sizeof(m), 0, q) == 0, end);  
 			md_map(h, m, sizeof(m));
-			TEST_ASSERT(cp_ecdsa_sig(r, s, h, RLC_MD_LEN, 1, d) == RLC_OK, end);
+			TEST_ASSERT(cp_ecdsa_sig(r, s, h, RLC_MD_LEN, 1, d) == RLC_OK, end);  // 1表示输入的是哈希值
 			TEST_ASSERT(cp_ecdsa_ver(r, s, h, RLC_MD_LEN, 1, q) == 1, end);
 			h[0] ^= 1;
 			TEST_ASSERT(cp_ecdsa_ver(r, s, h, RLC_MD_LEN, 1, q) == 0, end);
-			memset(h, 0, RLC_MD_LEN);
-			TEST_ASSERT(cp_ecdsa_ver(r, s, h, RLC_MD_LEN, 1, q) == 0, end);
+			memset(h, 0, RLC_MD_LEN);                                       
+			TEST_ASSERT(cp_ecdsa_ver(r, s, h, RLC_MD_LEN, 1, q) == 0, end);  // 全零的哈希值是否能通过验签
 		}
 		TEST_END;
 	}
