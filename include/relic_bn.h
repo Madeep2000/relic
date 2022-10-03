@@ -168,7 +168,7 @@ typedef crt_st *crt_t;
  */
 #if ALLOC == DYNAMIC
 #define bn_new(A)															\
-	A = (bn_t)calloc(1, sizeof(bn_st));										\
+	A = (bn_t)calloc(1, sizeof(bn_st));         							\
 	if ((A) == NULL) {														\
 		RLC_THROW(ERR_NO_MEMORY);											\
 	}																		\

@@ -1549,6 +1549,7 @@ static int validity(void) {
 	return code;
 }
 
+#include <time.h>
 static int pairing(void) {
 	int j, code = RLC_ERR;
 	g1_t p[2];
@@ -1575,7 +1576,8 @@ static int pairing(void) {
 		}
 
 		pc_get_ord(n);
-
+		bn_print(n);
+		return 0;
 		TEST_CASE("pairing non-degeneracy is correct") {
 			g1_rand(p[0]);
 			g2_rand(q[0]);
@@ -1594,7 +1596,19 @@ static int pairing(void) {
 			g1_rand(p[0]);
 			g2_rand(q[0]);
 			bn_rand_mod(k, n);
-			g2_mul(q[1], q[0], k);
+#if 1
+			// 测试曲线配对算法
+			clock_t begin, end;
+			size_t count=1000;
+			begin = clock();
+			for (size_t ti = 0; ti < count; ti++)
+			{
+				pp_map_tatep_k12(e2, p[0], q[0]);
+			}
+			end = clock();
+			printf("total time: %d s, one pairing time: %f s\n", (end-begin)/CLOCKS_PER_SEC, ((double)end-begin)/CLOCKS_PER_SEC/count);
+#endif
+			g2_mul(q[1], q[0], k);  // q1 = [k]q0
 			pc_map(e1, p[0], q[1]);
 			pc_map(e2, p[0], q[0]);
 			gt_exp(e2, e2, k);
@@ -1758,36 +1772,36 @@ int test2(void) {
 int test(void) {
 	util_banner("Utilities:", 1);
 
-	if (memory() != RLC_OK) {
-		core_clean();
-		return 1;
-	}
+	// if (memory() != RLC_OK) {
+	// 	core_clean();
+	// 	return 1;
+	// }
 
-	if (util() != RLC_OK) {
-		return RLC_ERR;
-	}
+	// if (util() != RLC_OK) {
+	// 	return RLC_ERR;
+	// }
 
-	util_banner("Arithmetic:", 1);
+	// util_banner("Arithmetic:", 1);
 
-	if (multiplication() != RLC_OK) {
-		return RLC_ERR;
-	}
+	// if (multiplication() != RLC_OK) {
+	// 	return RLC_ERR;
+	// }
 
-	if (squaring() != RLC_OK) {
-		return RLC_ERR;
-	}
+	// if (squaring() != RLC_OK) {
+	// 	return RLC_ERR;
+	// }
 
-	if (inversion() != RLC_OK) {
-		return RLC_ERR;
-	}
+	// if (inversion() != RLC_OK) {
+	// 	return RLC_ERR;
+	// }
 
-	if (exponentiation() != RLC_OK) {
-		return RLC_ERR;
-	}
+	// if (exponentiation() != RLC_OK) {
+	// 	return RLC_ERR;
+	// }
 
-	if (validity() != RLC_OK) {
-		return RLC_ERR;
-	}
+	// if (validity() != RLC_OK) {
+	// 	return RLC_ERR;
+	// }
 
 	if (pairing() != RLC_OK) {
 		return RLC_ERR;
@@ -1796,7 +1810,127 @@ int test(void) {
 	return RLC_OK;
 }
 
+void test_paring(fp12_t r, ep2_t q, ep_t p){
+	// const char *abits = "00100000000000000000000000000000000000010000101011101100100111110";
+	const char *abits = "0010";
+	fp12_t f,g,fp12_tmp;
+	ep2_t T, Q1, Q2, ep2_tmp;
+
+	ep_t _p;
+	// fp12_t f, g;
+	bn_t n;
+
+	// null
+	ep2_null(T);
+	ep2_null(Q1);
+	ep2_null(Q2);
+	ep2_null(ep2_tmp);
+
+	bn_null(n);
+
+	fp12_null(f);
+	fp12_null(g);
+	fp12_null(fp12_tmp);
+
+	// new
+	ep2_new(T);
+	ep2_new(Q1);
+	ep2_new(Q2);
+
+	bn_new(n);
+	
+	fp12_new(f);
+	fp12_new(g);
+	fp12_new(fp12_tmp);
+
+	// f = 1
+	fp12_set_dig(f, 1);
+	
+	// ep2_copy
+	ep2_copy(T, q);
+
+	for(size_t i = 0; i < strlen(abits); i++)
+	{
+		fp12_sqr(f, f);  // f = f^2
+		printf("\n %d: f^2\n", i);
+		fp12_print(f);
+
+		// 打印ep2_tmp
+		ep2_dbl(ep2_tmp, T);
+		printf("\n %d: ep2_tmp_1\n", i);
+		ep2_print(ep2_tmp);
+
+		ep2_dbl_basic(ep2_tmp, T);
+		printf("\n %d: ep2_tmp_2\n", i);
+		ep2_print(ep2_tmp);
+
+		pp_dbl_k12_basic(g, T, T, p);  // T=[2]T, g=g_{T,T}(p)
+
+		// 打印T
+		printf("\n %d: T\n", i);
+		ep2_print(T);
+	
+		// 打印 g
+		printf("\n %d: g\n", i);
+		fp12_print(g);
+
+		fp12_mul(f, f, g);
+		printf("\n %d: f^2*g\n", i);
+		fp12_print(f);
+
+		if (abits[i] == '1')
+		{
+			pp_add_k12_basic(g, T, q, p);  // T=T+q, g=g_{T,Q}(p)
+			fp12_mul(f, f, g);
+		}
+	}
+	printf("\nendfor:\n");
+	fp12_print(f);
+
+}
+
+void init_Ppub(){
+	printf("hello\n");
+
+	g1_t g1;
+	g2_t g2;
+
+	g1_null(g1);
+	g1_new(g1);
+	g1_get_gen(g1);
+	// g1_print(g1);
+
+	g2_null(g2);
+	g2_new(g2);
+	g2_get_gen(g2);
+	// g2_print(g2);
+
+	ep2_t Ppub;
+	ep2_null(Ppub);
+	ep2_new(Ppub);
+	char x0[] = "29DBA116152D1F786CE843ED24A3B573414D2177386A92DD8F14D65696EA5E32";
+	char x1[] = "85AEF3D078640C98597B6027B441A01FF1DD2C190F5E93C454806C11D8806141";
+	char y0[] = "A7CF28D519BE3DA65F3170153D278FF247EFBA98A71A08116215BBA5C999A7C7";
+	char y1[] = "17509B092E845C1266BA0D262CBEE6ED0736A96FA347C8BD856DC76B84EBEB96";
+	char z0[] = "1";
+	char z1[] = "0";
+
+	fp_read_str(Ppub->x[0], x0, strlen(x0), 16);
+	fp_read_str(Ppub->x[1], x0, strlen(x1), 16);
+	fp_read_str(Ppub->y[0], y0, strlen(y0), 16);
+	fp_read_str(Ppub->y[1], y1, strlen(y1), 16);
+	fp_read_str(Ppub->z[0], z0, strlen(z0), 16);
+	fp_read_str(Ppub->z[1], z1, strlen(z1), 16);
+
+	// ep2_print(Ppub);
+	fp12_t lll;
+	test_paring(lll, Ppub, g1);
+	// fp12_print(lll);
+}
 int main(void) {
+
+
+
 	if (core_init() != RLC_OK) {
 		core_clean();
 		return 1;
@@ -1812,23 +1946,29 @@ int main(void) {
 
 	pc_param_print();
 
-	util_banner("Group G_1:", 0);
-	if (test1() != RLC_OK) {
-		core_clean();
-		return 1;
-	}
+	init_Ppub();
+	return 0;
 
-	util_banner("Group G_2:", 0);
-	if (test2() != RLC_OK) {
-		core_clean();
-		return 1;
-	}
 
-	util_banner("Group G_T:", 0);
-	if (test() != RLC_OK) {
-		core_clean();
-		return 1;
-	}
+
+	// ep_print(ctx->ep_g);
+	// util_banner("Group G_1:", 0);
+	// if (test1() != RLC_OK) {
+	// 	core_clean();
+	// 	return 1;
+	// }
+
+	// util_banner("Group G_2:", 0);
+	// if (test2() != RLC_OK) {
+	// 	core_clean();
+	// 	return 1;
+	// }
+
+	// util_banner("Group G_T:", 0);
+	// if (test() != RLC_OK) {
+	// 	core_clean();
+	// 	return 1;
+	// }
 
 	util_banner("All tests have passed.\n", 0);
 

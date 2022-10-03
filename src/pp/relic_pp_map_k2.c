@@ -63,18 +63,18 @@ static void pp_mil_k2(fp2_t r, ep_t *t, ep_t *p, ep_t *q, int m, bn_t a) {
 		for (j = 0; j < m; j++) {
 			ep_null(_q[j]);
 			ep_new(_q[j]);
-			ep_copy(t[j], p[j]);
-			ep_neg(_q[j], q[j]);
+			ep_copy(t[j], p[j]);  // t = p
+			ep_neg(_q[j], q[j]);  // _q = q
 		}
 
-		fp2_zero(l);
+		fp2_zero(l);  // l = 0
 		for (i = bn_bits(a) - 2; i >= 0; i--) {
-			fp2_sqr(r, r);
+			fp2_sqr(r, r);  // r = r^2
 			for (j = 0; j < m; j++) {
-				pp_dbl_k2(l, t[j], t[j], _q[j]);
+				pp_dbl_k2(l, t[j], t[j], _q[j]);  // 
 				fp2_mul(r, r, l);
 				if (bn_get_bit(a, i)) {
-					pp_add_k2(l, t[j], p[j], q[j]);
+					pp_add_k2(l, t[j], p[j], q[j]);  // 
 					fp2_mul(r, r, l);
 				}
 			}
@@ -175,12 +175,12 @@ void pp_map_tatep_k2(fp2_t r, ep_t p, ep_t q) {
 		ep_norm(_q[0], q);
 		ep_curve_get_ord(n);
 		/* Since p has order n, we do not have to perform last iteration. */
-		bn_sub_dig(n, n, 1);
-		fp2_set_dig(r, 1);
+		bn_sub_dig(n, n, 1);  // n = n - 1
+		fp2_set_dig(r, 1);  
 
 		if (!ep_is_infty(p) && !ep_is_infty(q)) {
 			pp_mil_k2(r, t, _p, _q, 1, n);
-			pp_exp_k2(r, r);
+			pp_exp_k2(r, r);  // c = a^(p^2 - 1)/r
 		}
 	}
 	RLC_CATCH_ANY {

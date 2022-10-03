@@ -41,6 +41,7 @@
 
 #if EP_ADD == BASIC || !defined(STRIP)
 
+// l = g_{r+p}(q)
 void pp_add_k2_basic(fp2_t l, ep_t r, ep_t p, ep_t q) {
 	fp_t s;
 	ep_t t;
@@ -52,8 +53,8 @@ void pp_add_k2_basic(fp2_t l, ep_t r, ep_t p, ep_t q) {
 		fp_new(s);
 		ep_new(t);
 
-		ep_copy(t, r);
-		ep_add_slp_basic(r, s, r, p);
+		ep_copy(t, r);  // t = r
+		ep_add_slp_basic(r, s, r, p);  // r = r+p
 		fp_add(l[0], t->x, q->x);
 		fp_mul(l[0], l[0], s);
 		fp_sub(l[0], t->y, l[0]);

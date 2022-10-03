@@ -41,6 +41,8 @@
 
 #if EP_ADD == BASIC || !defined(STRIP)
 
+// r = [2]q
+// l = g_{q,q}(p)
 void pp_dbl_k12_basic(fp12_t l, ep2_t r, ep2_t q, ep_t p) {
 	fp2_t s;
 	ep2_t t;
@@ -52,23 +54,25 @@ void pp_dbl_k12_basic(fp12_t l, ep2_t r, ep2_t q, ep_t p) {
 	RLC_TRY {
 		fp2_new(s);
 		ep2_new(t);
-		ep2_copy(t, q);
-		ep2_dbl_slp_basic(r, s, q);
-
+		ep2_copy(t, q);  // t = q
+		ep2_dbl_slp_basic(r, s, q);  // r = 2q, s = 斜率\lambda1
+		
 		if (ep2_curve_is_twist() == RLC_EP_MTYPE) {
 			one ^= 1;
 			zero ^= 1;
 		}
 
-		fp_mul(l[one][zero][0], s[0], p->x);
+		fp_mul(l[one][zero][0], s[0], p->x);  // l[1][0] = s*x_p
 		fp_mul(l[one][zero][1], s[1], p->x);
-		fp2_mul(l[one][one], s, t->x);
-		fp2_sub(l[one][one], t->y, l[one][one]);
-		fp_copy(l[zero][zero][0], p->y);
+		fp2_mul(l[one][one], s, t->x);        // l[1][1] = s*x_q
+		fp2_sub(l[one][one], t->y, l[one][one]);  // l[1][1] = y_q - s*x_q
+		fp_copy(l[zero][zero][0], p->y);      // l[0][0]
 	}
+
 	RLC_CATCH_ANY {
 		RLC_THROW(ERR_CAUGHT);
 	}
+
 	RLC_FINALLY {
 		fp2_free(s);
 		ep2_free(t);

@@ -73,6 +73,7 @@ static void ep2_dbl_basic_imp(ep2_t r, fp2_t s, ep2_t p) {
 		/* t1 = (3 * x1^2 + a)/(2 * y1). */
 		fp2_mul(t1, t1, t0);
 
+		// s 是斜率！也就是\lambda1
 		if (s != NULL) {
 			fp2_copy(s, t1);
 		}
@@ -256,7 +257,6 @@ void ep2_dbl_slp_basic(ep2_t r, fp2_t s, ep2_t p) {
 
 	ep2_dbl_basic_imp(r, s, p);
 }
-
 #endif
 
 #if EP_ADD == PROJC || !defined(STRIP)

@@ -41,6 +41,8 @@
 
 #if EP_ADD == BASIC || !defined(STRIP)
 
+// r = r+q
+// t = g_{r,q}(p)
 void pp_add_k12_basic(fp12_t l, ep2_t r, ep2_t q, ep_t p) {
 	int one = 1, zero = 0;
 	fp2_t s;

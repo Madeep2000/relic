@@ -181,9 +181,7 @@ int fp_size_str(const fp_t a, int radix) {
 
 void fp_read_str(fp_t a, const char *str, int len, int radix) {
 	bn_t t;
-
 	bn_null(t);
-
 	RLC_TRY {
 		bn_new(t);
 		bn_read_str(t, str, len, radix);
@@ -207,6 +205,7 @@ void fp_read_str(fp_t a, const char *str, int len, int radix) {
 		bn_free(t);
 	}
 }
+
 
 void fp_write_str(char *str, int len, const fp_t a, int radix) {
 	bn_t t;

@@ -41,6 +41,7 @@
 
 #if EP_ADD == BASIC || !defined(STRIP)
 
+// r = p+q
 void pp_dbl_k2_basic(fp2_t l, ep_t r, ep_t p, ep_t q) {
 	fp_t s;
 	ep_t t;
@@ -51,13 +52,13 @@ void pp_dbl_k2_basic(fp2_t l, ep_t r, ep_t p, ep_t q) {
 	RLC_TRY {
 		fp_new(s);
 		ep_new(t);
-
-		ep_copy(t, p);
-		ep_dbl_slp_basic(r, s, p);
-		fp_add(l[0], t->x, q->x);
-		fp_mul(l[0], l[0], s);
-		fp_sub(l[0], t->y, l[0]);
-		fp_copy(l[1], q->y);
+	
+		ep_copy(t, p);  // t = p
+		ep_dbl_slp_basic(r, s, p);  // r = 2p
+		fp_add(l[0], t->x, q->x);  // l[0] = t_x + q_x
+		fp_mul(l[0], l[0], s);  // l[0]=(t_x + q_x)*s
+		fp_sub(l[0], t->y, l[0]);  // l[0] = t_y - (t_x + q_x)*s
+		fp_copy(l[1], q->y);  // l[1] = q_y
 	} RLC_CATCH_ANY {
 		RLC_THROW(ERR_CAUGHT);
 	} RLC_FINALLY {

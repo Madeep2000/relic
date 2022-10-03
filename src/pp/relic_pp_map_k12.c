@@ -81,7 +81,6 @@ static void pp_mil_k12(fp12_t r, ep2_t *t, ep2_t *q, ep_t *p, int m, bn_t a) {
 			fp_neg(_p[j]->y, p[j]->y);
 #endif
 		}
-
 		fp12_zero(l);
 		bn_rec_naf(s, &len, a, 2);
 		pp_dbl_k12(r, t[0], t[0], _p[0]);
@@ -145,7 +144,7 @@ static void pp_mil_k12(fp12_t r, ep2_t *t, ep2_t *q, ep_t *p, int m, bn_t a) {
  */
 static void pp_mil_lit_k12(fp12_t r, ep_t *t, ep_t *p, ep2_t *q, int m, bn_t a) {
 	fp12_t l;
-	ep2_t *_q = RLC_ALLOCA(ep2_t, m);
+	ep2_t *_q = RLC_ALLOCA(ep2_t, m);  // num: m, type: ep2_t
 	int j;
 
 	fp12_null(l);
@@ -158,18 +157,18 @@ static void pp_mil_lit_k12(fp12_t r, ep_t *t, ep_t *p, ep2_t *q, int m, bn_t a) 
 		for (j = 0; j < m; j++) {
 			ep2_null(_q[j]);
 			ep2_new(_q[j]);
-			ep_copy(t[j], p[j]);
-			ep2_neg(_q[j], q[j]);
+			ep_copy(t[j], p[j]);  // t = p
+			ep2_neg(_q[j], q[j]);  // _q = -q
 		}
 
-		fp12_zero(l);
+		fp12_zero(l);  // l = 0
 		for (int i = bn_bits(a) - 2; i >= 0; i--) {
-			fp12_sqr(r, r);
+			fp12_sqr(r, r);  
 			for (j = 0; j < m; j++) {
-				pp_dbl_lit_k12(l, t[j], t[j], _q[j]);
-				fp12_mul(r, r, l);
-				if (bn_get_bit(a, i)) {
-					pp_add_lit_k12(l, t[j], p[j], q[j]);
+				pp_dbl_lit_k12(l, t[j], t[j], _q[j]);  // l = g_{t[j],t[j]}(_q[j]), t[j]=2t[j]
+				fp12_mul(r, r, l);  // r=r^2*xxx, t[j]=2[j]
+				if (bn_get_bit(a, i)) {  // 如果ai = 1
+					pp_add_lit_k12(l, t[j], p[j], q[j]);  // t[j] = p[j] + q[j]
 					fp12_mul(r, r, l);
 				}
 			}
@@ -485,16 +484,21 @@ void pp_map_oatep_k12(fp12_t r, ep_t p, ep2_t q) {
 		if (!ep_is_infty(_p[0]) && !ep2_is_infty(_q[0])) {
 			switch (ep_curve_is_pairf()) {
 				case EP_BN:
-					bn_mul_dig(a, a, 6);
+					// a = 6t+2
+					bn_mul_dig(a, a, 6);  
 					bn_add_dig(a, a, 2);
+
 					/* r = f_{|a|,Q}(P). */
 					pp_mil_k12(r, t, _q, _p, 1, a);
+
 					if (bn_sign(a) == RLC_NEG) {
 						/* f_{-a,Q}(P) = 1/f_{a,Q}(P). */
 						fp12_inv_cyc(r, r);
 						ep2_neg(t[0], t[0]);
 					}
+
 					pp_fin_k12_oatep(r, t[0], _q[0], _p[0]);
+
 					pp_exp_k12(r, r);
 					break;
 				case EP_B12:
