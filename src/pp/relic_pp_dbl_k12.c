@@ -63,7 +63,7 @@ void pp_dbl_k12_basic(fp12_t l, ep2_t r, ep2_t q, ep_t p) {
 		}
 
 		fp_mul(l[one][zero][0], s[0], p->x);  // l[1][0] = s*x_p
-		fp_mul(l[one][zero][1], s[1], p->x);
+		fp_mul(l[one][zero][1], s[1], p->x);  
 		fp2_mul(l[one][one], s, t->x);        // l[1][1] = s*x_q
 		fp2_sub(l[one][one], t->y, l[one][one]);  // l[1][1] = y_q - s*x_q
 		fp_copy(l[zero][zero][0], p->y);      // l[0][0]

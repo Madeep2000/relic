@@ -1812,35 +1812,46 @@ int test(void) {
 
 void test_paring(fp12_t r, ep2_t q, ep_t p){
 	// const char *abits = "00100000000000000000000000000000000000010000101011101100100111110";
-	const char *abits = "0010";
-	fp12_t f,g,fp12_tmp;
-	ep2_t T, Q1, Q2, ep2_tmp;
+	const char *abits = "1";
+	fp12_t f, g, fp12_tmp;
+	ep2_t T, Q1, Q2, ep2_tmp, ep2_tmp2;
 
 	ep_t _p;
 	// fp12_t f, g;
 	bn_t n;
 
+
 	// null
+	ep_null(_p);
+
 	ep2_null(T);
 	ep2_null(Q1);
 	ep2_null(Q2);
 	ep2_null(ep2_tmp);
+	ep2_null(ep2_tmp2);
 
 	bn_null(n);
 
 	fp12_null(f);
 	fp12_null(g);
 	fp12_null(fp12_tmp);
+	fp12_null(fp12_tmp2);
+
 
 	// new
+	ep_new(_p);
+
 	ep2_new(T);
 	ep2_new(Q1);
 	ep2_new(Q2);
+	ep2_new(ep2_tmp);
+	ep2_new(ep2_tmp2);
 
 	bn_new(n);
 	
 	fp12_new(f);
 	fp12_new(g);
+	fp12_new(fp12_tmp);
 	fp12_new(fp12_tmp);
 
 	// f = 1
@@ -1849,25 +1860,38 @@ void test_paring(fp12_t r, ep2_t q, ep_t p){
 	// ep2_copy
 	ep2_copy(T, q);
 
+	ep_neg(_p, p);
+
+	ep_print(_p);
+	ep_print(p);
 	for(size_t i = 0; i < strlen(abits); i++)
 	{
 		fp12_sqr(f, f);  // f = f^2
-		printf("\n %d: f^2\n", i);
-		fp12_print(f);
 
-		// 打印ep2_tmp
-		ep2_dbl(ep2_tmp, T);
-		printf("\n %d: ep2_tmp_1\n", i);
-		ep2_print(ep2_tmp);
+		// // 打印ep2_tmp
+		// printf("\n %d: T\n", i);
+		// ep2_print(T);
+		// ep2_dbl(ep2_tmp, T);
+		// // 将射影坐标转为仿射坐标
+		// ep2_norm(ep2_tmp, ep2_tmp);
+		// printf("\n %d: 2T\n", i);
+		// ep2_print(ep2_tmp);
 
-		ep2_dbl_basic(ep2_tmp, T);
-		printf("\n %d: ep2_tmp_2\n", i);
-		ep2_print(ep2_tmp);
+		// ep2_dbl_basic(ep2_tmp2, T);
 
-		pp_dbl_k12_basic(g, T, T, p);  // T=[2]T, g=g_{T,T}(p)
+		// ep2_dbl(ep2_tmp, T);
+		// ep2_norm(ep2_tmp, ep2_tmp);
+		// ep2_print(ep2_tmp);
 
+		// ep_print(p);
+
+		pp_dbl_k12_basic(g, T, T, _p);  // T=[2]T, g=g_{T,T}(p)
+		
+		printf("\na\n");
+		fp2_print(ep2_curve_get_a());
+		
 		// 打印T
-		printf("\n %d: T\n", i);
+		printf("\n %d: [2]T\n", i);
 		ep2_print(T);
 	
 		// 打印 g
@@ -1884,8 +1908,8 @@ void test_paring(fp12_t r, ep2_t q, ep_t p){
 			fp12_mul(f, f, g);
 		}
 	}
-	printf("\nendfor:\n");
-	fp12_print(f);
+	// printf("\nendfor:\n");
+	// fp12_print(f);
 
 }
 
@@ -1909,14 +1933,14 @@ void init_Ppub(){
 	ep2_null(Ppub);
 	ep2_new(Ppub);
 	char x0[] = "29DBA116152D1F786CE843ED24A3B573414D2177386A92DD8F14D65696EA5E32";
-	char x1[] = "85AEF3D078640C98597B6027B441A01FF1DD2C190F5E93C454806C11D8806141";
-	char y0[] = "A7CF28D519BE3DA65F3170153D278FF247EFBA98A71A08116215BBA5C999A7C7";
-	char y1[] = "17509B092E845C1266BA0D262CBEE6ED0736A96FA347C8BD856DC76B84EBEB96";
+	char x1[] = "9F64080B3084F733E48AFF4B41B565011CE0711C5E392CFB0AB1B6791B94C408";
+	char y0[] = "41E00A53DDA532DA1A7CE027B7A46F741006E85F5CDFF0730E75C05FB4E3216D";
+	char y1[] = "69850938ABEA0112B57329F447E3A0CBAD3E2FDB1A77F335E89E1408D0EF1C25";
 	char z0[] = "1";
 	char z1[] = "0";
 
 	fp_read_str(Ppub->x[0], x0, strlen(x0), 16);
-	fp_read_str(Ppub->x[1], x0, strlen(x1), 16);
+	fp_read_str(Ppub->x[1], x1, strlen(x1), 16);
 	fp_read_str(Ppub->y[0], y0, strlen(y0), 16);
 	fp_read_str(Ppub->y[1], y1, strlen(y1), 16);
 	fp_read_str(Ppub->z[0], z0, strlen(z0), 16);
@@ -1948,8 +1972,6 @@ int main(void) {
 
 	init_Ppub();
 	return 0;
-
-
 
 	// ep_print(ctx->ep_g);
 	// util_banner("Group G_1:", 0);
