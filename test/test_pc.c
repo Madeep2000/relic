@@ -1852,40 +1852,63 @@ static void sm9_eval_g_tangent(fp12_t num, fp12_t den, ep2_t P, ep_t Q){
 	fp2_new(two_inv);
 	bn_new(three);
 
-	printf("22\n");
 	fp12_set_dig(num, 0);
 	fp12_set_dig(den, 0);
 	fp2_set_dig(two_inv, 2);
 	fp2_inv(two_inv, two_inv);
 	bn_set_dig(three, 3);
-	printf("33\n");
+	
+	printf("\n num \n");
+	fp12_print(num);
+
+	printf("\n den \n");
+	fp12_print(den);
 
 	fp2_sqr(t0, ZP);
 	fp2_mul(t1, t0, ZP);
 	fp2_mul(b1, t1, YP);
-	printf("44\n");
+
+	printf("\n b1 \n");
+	fp2_print(b1);
 
 	fp2_mul_fp(t2, b1, yQ);
+
+	// printf("\n b1 \n");
+	// fp2_print(b1);
+	// printf("\n yQ \n");
+	// fp2_print(yQ);
+	// printf("\n t2 \n");
+	// fp2_print(t2);
+
 	fp2_neg(a1, t2);
-	printf("55\n");
+	
+	printf("\n a1 \n");
+	fp2_print(a1);
 
 	fp2_sqr(t1, XP);
 	fp2_mul(t0, t0, t1);
-		printf("66\n");
-
 	fp2_mul_fp(t0, t0, xQ);
-	fp2_exp(t0, t0, three);
-		printf("66\n");
+	// printf("\n t0 \n");
+	// fp2_print(t0);
+
+	fp2_mul_dig(t0, t0, 3);
+	
+	// printf("\n t0 \n");
+	// fp2_print(t0);
 
 	fp2_mul(a4, t0, two_inv);
-	printf("66\n");
+
+	printf("\n a4 \n");
+	fp2_print(a4);
 
 	fp2_mul(t1, t1, XP);
-	fp2_exp(t1, t1, three);
+	fp2_mul_dig(t1, t1, 3);
 	fp2_mul(t1, t1, two_inv);
 	fp2_sqr(t0, YP);
 	fp2_sub(a0, t0, t1);
-	printf("finish!\n");
+
+	printf("\n a0 \n");
+	fp2_print(a0);
 }
 
 void test_paring(fp12_t r, ep2_t q, ep_t p){
@@ -1941,7 +1964,8 @@ void test_paring(fp12_t r, ep2_t q, ep_t p){
 	// ep2_copy
 	ep2_copy(T, q);
 
-	ep_neg(_p, p);
+	ep_copy(_p, p);
+	// ep_neg(_p, p);
 
 	// ep_print(_p);
 	// ep_print(p);
