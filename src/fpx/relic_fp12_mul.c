@@ -391,6 +391,7 @@ void fp12_mul_dxs_lazyr(fp12_t c, fp12_t a, fp12_t b) {
 		}
 		/* c_1 = a_0 + a_1. */
 		fp6_add(c[1], a[0], a[1]);
+		
 		/* c_1 = (a_0 + a_1) * (b_0 + b_1) */
 		fp6_mul_dxs_unr_lazyr(u2, c[1], t0);
 		for (int i = 0; i < 3; i++) {
@@ -405,6 +406,7 @@ void fp12_mul_dxs_lazyr(fp12_t c, fp12_t a, fp12_t b) {
 		fp2_addc_low(u0[0], u0[0], u2[0]);
 		fp2_addc_low(u0[1], u0[1], u1[0]);
 		fp2_addc_low(u0[2], u0[2], u1[1]);
+
 		/* c_0 = a_0b_0 + v * a_1b_1. */
 		fp2_rdcn_low(c[0][0], u0[0]);
 		fp2_rdcn_low(c[0][1], u0[1]);

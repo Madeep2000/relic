@@ -82,15 +82,15 @@ static void pp_mil_k12(fp12_t r, ep2_t *t, ep2_t *q, ep_t *p, int m, bn_t a) {
 #endif
 		}
 		fp12_zero(l);
-		bn_rec_naf(s, &len, a, 2);
-		pp_dbl_k12(r, t[0], t[0], _p[0]);
+		bn_rec_naf(s, &len, a, 2);  
+		pp_dbl_k12(r, t[0], t[0], _p[0]);  // t = [2]t
 		for (j = 1; j < m; j++) {
-			pp_dbl_k12(l, t[j], t[j], _p[j]);
+			pp_dbl_k12(l, t[j], t[j], _p[j]);  
 			fp12_mul_dxs(r, r, l);
 		}
 		if (s[len - 2] > 0) {
 			for (j = 0; j < m; j++) {
-				pp_add_k12(l, t[j], q[j], p[j]);
+				pp_add_k12(l, t[j], q[j], p[j]);  // t = t+q
 				fp12_mul_dxs(r, r, l);
 			}
 		}
