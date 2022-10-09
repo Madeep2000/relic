@@ -52,7 +52,7 @@ void pp_dbl_k2_basic(fp2_t l, ep_t r, ep_t p, ep_t q) {
 	RLC_TRY {
 		fp_new(s);
 		ep_new(t);
-	
+
 		ep_copy(t, p);  // t = p
 		ep_dbl_slp_basic(r, s, p);  // r = 2p
 		fp_add(l[0], t->x, q->x);  // l[0] = t_x + q_x
