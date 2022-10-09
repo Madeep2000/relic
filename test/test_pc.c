@@ -34,7 +34,8 @@
 #include "relic.h"
 #include "relic_test.h"
 
-fp_t SM9_BETA, SM9_ALPHA1, SM9_ALPHA2, SM9_ALPHA3, SM9_ALPHA4, SM9_ALPHA5;
+fp_t SM9_ALPHA1, SM9_ALPHA2, SM9_ALPHA3, SM9_ALPHA4, SM9_ALPHA5;
+fp2_t SM9_BETA;
 
 static int memory1(void) {
 	err_t e;
@@ -1827,21 +1828,23 @@ static void init_BETA_ALPHA(){
 	char alpha4[] = "F300000002A3A6F2780272354F8B78F4D5FC11967BE65333";
 	char alpha5[] = "2D40A38CF6983351711E5F99520347CC57D778A9F8FF4C8A4C949C7FA2A96686";
 
-	fp_null(SM9_BETA);
+	fp2_null(SM9_BETA);
 	fp_null(SM9_ALPHA1);
 	fp_null(SM9_ALPHA2);
 	fp_null(SM9_ALPHA3);
 	fp_null(SM9_ALPHA4);
 	fp_null(SM9_ALPHA5);
 
-	fp_new(SM9_BETA);
+	fp2_new(SM9_BETA);
 	fp_new(SM9_ALPHA1);
 	fp_new(SM9_ALPHA2);
 	fp_new(SM9_ALPHA3);
 	fp_new(SM9_ALPHA4);
 	fp_new(SM9_ALPHA5);
 
-	fp_read_str(SM9_BETA, beta, strlen(beta), 16);
+	fp_read_str(SM9_BETA[0], beta, strlen(beta), 16);
+	fp_set_dig(SM9_BETA[1], 0);
+
 	fp_read_str(SM9_ALPHA1, alpha1, strlen(alpha1), 16);
 	fp_read_str(SM9_ALPHA2, alpha2, strlen(alpha2), 16);
 	fp_read_str(SM9_ALPHA3, alpha3, strlen(alpha3), 16);
@@ -1850,15 +1853,15 @@ static void init_BETA_ALPHA(){
 }
 
 static void free_BETA_ALPHA(){
-	fp_free(beta);
-	fp_free(alpha1);
-	fp_free(alpha2);
-	fp_free(alpha3);
-	fp_free(alpha4);
-	fp_free(alpha5);
+	fp2_free(SM9_BETA);
+	fp_free(SM9_ALPHA1);
+	fp_free(SM9_ALPHA2);
+	fp_free(SM9_ALPHA3);
+	fp_free(SM9_ALPHA4);
+	fp_free(SM9_ALPHA5);
 }
 
-void bn_to_bits(const sm9_bn_t a[], char bits[256])
+void bn_to_bits(const sm9_bn_t a, char bits[256])
 {
 	int i, j;
 	for (i = 7; i >= 0; i--) {
@@ -2059,6 +2062,12 @@ static void fp12_inv_t(fp12_t r, const fp12_t a)
 	if (fp4_is_zero(a[1][1])) {
 		fp4_t k, t;
 
+		fp4_null(k);
+		fp4_null(t);
+
+		fp4_new(k);
+		fp4_new(t);
+
 		fp4_sqr(k, a[0][0]);
 		fp4_mul(k, k, a[0][0]);
 		fp4_sqr_v(t, a[0][2]);
@@ -2076,15 +2085,27 @@ static void fp12_inv_t(fp12_t r, const fp12_t a)
 		fp4_sqr(r[0][0], a[0][0]);
 		fp4_mul(r[0][0], r[0][0], k);
 
+		fp4_free(k);
+		fp4_free(t);
 	} else {
 		fp4_t t0, t1, t2, t3;
+
+		fp4_null(t0);
+		fp4_null(t1);
+		fp4_null(t2);
+		fp4_null(t3);
+
+		fp4_new(t0);
+		fp4_new(t1);
+		fp4_new(t2);
+		fp4_new(t3);
 
 		fp4_sqr(t0, a[0][2]);
 		fp4_mul(t1, a[0][0], a[1][1]);
 		fp4_sub(t0, t0, t1);
 
 		fp4_mul(t1, a[0][0], a[0][2]);
-		fp4_sqr_v(t2, a[2]);
+		fp4_sqr_v(t2, a[1][1]);
 		fp4_sub(t1, t1, t2);
 
 		fp4_sqr(t2, a[0][0]);
@@ -2103,6 +2124,11 @@ static void fp12_inv_t(fp12_t r, const fp12_t a)
 		fp4_neg(r[0][2], r[0][2]);
 
 		fp4_mul(r[1][1], t0, t3);
+	
+		fp4_free(t0);
+		fp4_free(t1);
+		fp4_free(t2);
+		fp4_free(t3);
 	}
 }
 
@@ -2164,7 +2190,13 @@ static void fp12_pow(fp12_t r, const fp12_t a, const sm9_bn_t k)
 	// assert(sm9_bn_cmp(k, SM9_P_MINUS_ONE) < 0);
 	fp12_set_dig(t, 0);
 
+	// for (size_t i = 0; i < 8; i++)
+	// {
+	// 	printf("k[%d]: %d\n", i, k[i]);
+	// }
+	
 	bn_to_bits(k, kbits);
+	// printf("bits: %s\n", kbits);
 	fp12_set_dig(t, 1);
 	for (i = 0; i < 256; i++) {
 		fp12_sqr_t(t, t);
@@ -2230,6 +2262,14 @@ static void fp12_frobenius3(fp12_t r, const fp12_t x)
 	fp4_t rb;
 	fp4_t rc;
 
+	fp4_null(ra);
+	fp4_null(rb);
+	fp4_null(rc);
+
+	fp4_new(ra);
+	fp4_new(rb);
+	fp4_new(rc);
+
 	fp2_conjugate(ra[0], xa[0]);
 	fp2_conjugate(ra[1], xa[1]);
 	fp2_mul(ra[1], ra[1], SM9_BETA);
@@ -2247,6 +2287,10 @@ static void fp12_frobenius3(fp12_t r, const fp12_t x)
 	fp4_copy(r[0][0], ra);
 	fp4_copy(r[0][2], rb);
 	fp4_copy(r[1][1], rc);
+
+	fp4_free(ra);
+	fp4_free(rb);
+	fp4_free(rc);
 }
 
 static void fp12_frobenius6(fp12_t r, const fp12_t x)
@@ -2574,9 +2618,9 @@ void sm9_final_exponent_hard_part(fp12_t r, const fp12_t f)
 {
 	// a2 = 0xd8000000019062ed0000b98b0cb27659
 	// a3 = 0x2400000000215d941
-	const bn_t a2 = {0xcb27659, 0x0000b98b, 0x019062ed, 0xd8000000, 0, 0, 0, 0};
-	const bn_t a3 = {0x215d941, 0x40000000, 0x2, 0, 0, 0, 0, 0};
-	const bn_t nine = {9,0,0,0,0,0,0,0};
+	const sm9_bn_t a2 = {0xcb27659, 0x0000b98b, 0x019062ed, 0xd8000000, 0, 0, 0, 0};
+	const sm9_bn_t a3 = {0x215d941, 0x40000000, 0x2, 0, 0, 0, 0, 0};
+	const sm9_bn_t nine = {9,0,0,0,0,0,0,0};
 	fp12_t t0, t1, t2, t3;
 
 	fp12_null(t0);
@@ -2590,14 +2634,20 @@ void sm9_final_exponent_hard_part(fp12_t r, const fp12_t f)
 	fp12_new(t3);
 
 	fp12_pow(t0, f, a3);
+	// printf("\n hard1 t0 \n");
+	// fp12_print(t0);
 	fp12_inv_t(t0, t0);
 	fp12_frobenius(t1, t0);
 	fp12_mul_t(t1, t0, t1);
+	// printf("\n hard1 t1 \n");
+	// fp12_print(t1);
 
 	fp12_mul_t(t0, t0, t1);
 	fp12_frobenius(t2, f);
 	fp12_mul_t(t3, t2, f);
 	fp12_pow(t3, t3, nine);
+	// printf("\n hard2 t3 \n");
+	// fp12_print(t3);
 
 	fp12_mul_t(t0, t0, t3);
 	fp12_sqr_t(t3, f);
@@ -2607,11 +2657,17 @@ void sm9_final_exponent_hard_part(fp12_t r, const fp12_t f)
 	fp12_mul_t(t2, t2, t1);
 	fp12_frobenius2(t1, f);
 	fp12_mul_t(t1, t1, t2);
+	// printf("\n hard3 t1 \n");
+	// fp12_print(t1);
 
 	fp12_pow(t2, t1, a2);
 	fp12_mul_t(t0, t2, t0);
 	fp12_frobenius3(t1, f);
+	// printf("\n hard4 frobenius3 \n");
+	// fp12_print(t1);
 	fp12_mul_t(t1, t1, t0);
+	// printf("\n hard4 t1 \n");
+	// fp12_print(t1);
 
 	fp12_copy(r, t1);
 
@@ -2633,12 +2689,34 @@ void sm9_final_exponent(fp12_t r, const fp12_t f)
 	fp12_new(t1);
 
 	fp12_frobenius6(t0, f);
+	// printf("\n epx1 t0 \n");
+	// fp12_print(t0);
+	
 	fp12_inv_t(t1, f);
+	// printf("\n f \n");
+	// fp12_print(f);
+	// printf("\n t1 \n");
+	// fp12_print(t1);
+
 	fp12_mul_t(t0, t0, t1);
+	// printf("\n epx2 t0 \n");
+	// fp12_print(t0);
+
 	fp12_frobenius2(t1, t0);
+
+	// printf("\n epx3 t1 \n");
+	// fp12_print(t1);
+
 	fp12_mul_t(t0, t0, t1);
+
+	// printf("\n epx4 t0 \n");
+	// fp12_print(t0);
+
 	sm9_final_exponent_hard_part(t0, t0);
 
+	// printf("\n epx5 t0 \n");
+	// fp12_print(t0);
+	
 	fp12_copy(r, t0);
 
 	fp12_free(t0);
@@ -2765,12 +2843,12 @@ void test_pairing(fp12_t r, ep2_t Q, ep_t P){
 	ep2_pi1(Q1, Q);  // Q1 = pi_q(Q)
 	ep2_pi2(Q2, Q);  // Q2 = pi_{q^2}(Q), Q2 = -Q2
 
-	printf("\n Q \n");
-	ep2_print(Q);
-	printf("\n Q1 \n");
-	ep2_print(Q1);
-	printf("\n Q2 \n");
-	ep2_print(Q2);
+	// printf("\n Q \n");
+	// ep2_print(Q);
+	// printf("\n Q1 \n");
+	// ep2_print(Q1);
+	// printf("\n Q2 \n");
+	// ep2_print(Q2);
 	
 	// e)
 	sm9_eval_g_line(g_num, g_den, T, Q1, P);  // g = g_{T,Q1}(P)
@@ -2790,46 +2868,43 @@ void test_pairing(fp12_t r, ep2_t Q, ep_t P){
 	// fp12_print(f_den);
 
 	// g)
-	printf("\n f_den \n");
-	fp12_print(f_den);
+	// printf("\n f_den \n");
+	// fp12_print(f_den);
 
 	fp12_inv_t(f_den, f_den);  // f_den = f_den^{-1}
 
-	printf("\n f_den \n");
-	fp12_print(f_den);
+	// printf("\n f_den \n");
+	// fp12_print(f_den);
 
 	fp12_mul_t(r, f_num, f_den);  // r = f_num*f_den = f
 
-	printf("\n r \n");
-	fp12_print(r);
+	// printf("\n r \n");
+	// fp12_print(r);
 
 	sm9_final_exponent(r, r);  // r = f^{(q^12-1)/r'}
 
-	printf("\n r \n");
-	fp12_print(r);
+	// printf("\n r \n");
+	// fp12_print(r);
 
 	return 0;
 }
 
 void init_Ppub(){
-	printf("hello\n");
-
 	g1_t g1;
 	g2_t g2;
 
 	g1_null(g1);
 	g1_new(g1);
 	g1_get_gen(g1);
-	// g1_print(g1);
 
 	g2_null(g2);
 	g2_new(g2);
 	g2_get_gen(g2);
-	// g2_print(g2);
 
 	ep2_t Ppub;
 	ep2_null(Ppub);
 	ep2_new(Ppub);
+
 	char x0[] = "29DBA116152D1F786CE843ED24A3B573414D2177386A92DD8F14D65696EA5E32";
 	char x1[] = "9F64080B3084F733E48AFF4B41B565011CE0711C5E392CFB0AB1B6791B94C408";
 	char y0[] = "41E00A53DDA532DA1A7CE027B7A46F741006E85F5CDFF0730E75C05FB4E3216D";
@@ -2844,11 +2919,34 @@ void init_Ppub(){
 	fp_read_str(Ppub->z[0], z0, strlen(z0), 16);
 	fp_read_str(Ppub->z[1], z1, strlen(z1), 16);
 
-	// ep2_print(Ppub);
-	fp12_t lll;
+	fp12_t r;
+
+	fp12_null(r);
+	fp12_new(r);
+
 	init_BETA_ALPHA();
-	test_pairing(lll, Ppub, g1);
-	// fp12_print(lll);
+
+	// 测试正确性
+	test_pairing(r, Ppub, g1);
+
+	printf("in: Ppub\n");
+	ep2_print(Ppub);
+	printf("in: g1\n");
+	ep_print(g1);
+	printf("out: r\n");
+	fp12_print(r);
+	
+	// 测试性能
+	clock_t begin, end;
+	size_t count=1000;
+	begin = clock();
+	for (size_t i = 0; i < count; i++)
+	{
+		test_pairing(r, Ppub, g1);
+	}
+	end = clock();
+	printf("run %d times, total time: %d s, one time: %f s\n", \
+       	   count, (end-begin)/CLOCKS_PER_SEC, ((double)end-begin)/CLOCKS_PER_SEC/count);
 	free_BETA_ALPHA();
 	
 }
@@ -2895,3 +2993,4 @@ int main(void) {
 	core_clean();
 	return 0;
 }
+

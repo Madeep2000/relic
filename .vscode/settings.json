@@ -2,6 +2,7 @@
     "files.associations": {
         "*.inc": "c",
         "limits": "c",
-        "*.tcc": "c"
+        "*.tcc": "c",
+        "cmath": "c"
     }
 }
