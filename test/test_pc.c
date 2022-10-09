@@ -1821,8 +1821,6 @@ static void sm9_eval_g_tangent(fp12_t num, fp12_t den, ep2_t P, ep_t Q){
 	// fp_t *x, *y;
 	// x = Q->x;
 	// y = Q->y;
-
-	printf("11\n");
 	const fp_t *XP = P->x;
 	const fp_t *YP = P->y;
 	const fp_t *ZP = P->z;
@@ -1831,7 +1829,7 @@ static void sm9_eval_g_tangent(fp12_t num, fp12_t den, ep2_t P, ep_t Q){
 
 	fp_t *a0 = num[0][0];
 	fp_t *a1 = num[0][1];
-	fp_t *a4 = num[1][0];
+	fp_t *a4 = num[1][1];
 	fp_t *b1 = den[0][1];
 
 	fp2_t t0;
@@ -1858,18 +1856,18 @@ static void sm9_eval_g_tangent(fp12_t num, fp12_t den, ep2_t P, ep_t Q){
 	fp2_inv(two_inv, two_inv);
 	bn_set_dig(three, 3);
 	
-	printf("\n num \n");
-	fp12_print(num);
+	// printf("\n num \n");
+	// fp12_print(num);
 
-	printf("\n den \n");
-	fp12_print(den);
+	// printf("\n den \n");
+	// fp12_print(den);
 
 	fp2_sqr(t0, ZP);
 	fp2_mul(t1, t0, ZP);
 	fp2_mul(b1, t1, YP);
 
-	printf("\n b1 \n");
-	fp2_print(b1);
+	// printf("\n b1 \n");
+	// fp2_print(b1);
 
 	fp2_mul_fp(t2, b1, yQ);
 
@@ -1882,8 +1880,8 @@ static void sm9_eval_g_tangent(fp12_t num, fp12_t den, ep2_t P, ep_t Q){
 
 	fp2_neg(a1, t2);
 	
-	printf("\n a1 \n");
-	fp2_print(a1);
+	// printf("\n a1 \n");
+	// fp2_print(a1);
 
 	fp2_sqr(t1, XP);
 	fp2_mul(t0, t0, t1);
@@ -1898,8 +1896,8 @@ static void sm9_eval_g_tangent(fp12_t num, fp12_t den, ep2_t P, ep_t Q){
 
 	fp2_mul(a4, t0, two_inv);
 
-	printf("\n a4 \n");
-	fp2_print(a4);
+	// printf("\n a4 \n");
+	// fp2_print(a4);
 
 	fp2_mul(t1, t1, XP);
 	fp2_mul_dig(t1, t1, 3);
@@ -1907,23 +1905,175 @@ static void sm9_eval_g_tangent(fp12_t num, fp12_t den, ep2_t P, ep_t Q){
 	fp2_sqr(t0, YP);
 	fp2_sub(a0, t0, t1);
 
-	printf("\n a0 \n");
-	fp2_print(a0);
+	// printf("\n a0 \n");
+	// fp2_print(a0);
 }
 
-void test_paring(fp12_t r, ep2_t q, ep_t p){
+static void sm9_eval_g_line(fp12_t num, fp12_t den, ep2_t T, ep2_t P, ep_t Q){
+	const fp_t *XP = P->x;
+	const fp_t *YP = P->y;
+	const fp_t *ZP = P->z;
+	const fp_t *XT = T->x;
+	const fp_t *YT = T->y;
+	const fp_t *ZT = T->z;
+	const uint64_t *xQ = Q->x;
+	const uint64_t *yQ = Q->y;
+
+	fp_t *a0 = num[0][0];
+	fp_t *a1 = num[0][1];
+	fp_t *a4 = num[1][1];
+	fp_t *b1 = den[0][1];
+
+	fp2_t T0, T1, T2, T3, T4;
+	fp2_t two_inv;
+	bn_t three;
+
+	fp2_null(T0);
+	fp2_null(T1);
+	fp2_null(T2);
+	fp2_null(T3);
+	fp2_null(T4);
+
+	fp2_null(two_inv);
+	bn_null(three);
+
+	fp2_new(T0);
+	fp2_new(T1);
+	fp2_new(T2);
+	fp2_new(T3);
+	fp2_new(T4);
+	fp2_new(two_inv);
+	bn_new(three);
+
+	fp12_set_dig(num, 0);
+	fp12_set_dig(den, 0);
+	fp2_set_dig(two_inv, 2);
+	fp2_inv(two_inv, two_inv);
+	bn_set_dig(three, 3);
+
+	fp2_sqr(T0, ZP);
+	fp2_mul(T1, T0, XT);
+	fp2_mul(T0, T0, ZP);
+	fp2_sqr(T2, ZT);
+	fp2_mul(T3, T2, XP);
+	fp2_mul(T2, T2, ZT);
+	fp2_mul(T2, T2, YP);
+	fp2_sub(T1, T1, T3);
+	fp2_mul(T1, T1, ZT);
+	fp2_mul(T1, T1, ZP);
+	fp2_mul(T4, T1, T0);
+	fp2_copy(b1, T4);
+
+	fp2_mul(T1, T1, YP);
+	fp2_mul(T3, T0, YT);
+	fp2_sub(T3, T3, T2);
+	fp2_mul(T0, T0, T3);
+	fp2_mul_fp(T0, T0, xQ);
+	fp2_copy(a4, T0);
+
+	fp2_mul(T3, T3, XP);
+	fp2_mul(T3, T3, ZP);
+	fp2_sub(T1, T1, T3);
+	fp2_copy(a0, T1);
+
+	fp2_mul_fp(T2, T4, yQ);
+	fp2_neg(T2, T2);
+	fp2_copy(a1, T2);
+}
+
+static void ep2_add_full(ep2_t R, ep2_t P, ep2_t Q)
+{
+	const fp_t *X1 = P->x;
+	const fp_t *Y1 = P->y;
+	const fp_t *Z1 = P->z;
+	const fp_t *X2 = Q->x;
+	const fp_t *Y2 = Q->y;
+	const fp_t *Z2 = Q->z;
+	fp2_t T1, T2, T3, T4, T5, T6, T7, T8;
+
+	fp2_null(T1);
+	fp2_null(T2);
+	fp2_null(T3);
+	fp2_null(T4);
+	fp2_null(T5);
+	fp2_null(T6);
+	fp2_null(T7);
+	fp2_null(T8);
+
+	fp2_new(T1);
+	fp2_new(T2);
+	fp2_new(T3);
+	fp2_new(T4);
+	fp2_new(T5);
+	fp2_new(T6);
+	fp2_new(T7);
+	fp2_new(T8);
+
+	if (ep2_is_infty(Q)) {
+		ep2_copy(R, P);
+		return;
+	}
+	if (ep2_is_infty(P)) {
+		ep2_copy(R, Q);
+		return;
+	}
+
+	fp2_sqr(T1, Z1);
+	fp2_sqr(T2, Z2);
+	fp2_mul(T3, X2, T1);
+	fp2_mul(T4, X1, T2);
+	fp2_add(T5, T3, T4);
+	fp2_sub(T3, T3, T4);
+	fp2_mul(T1, T1, Z1);
+	fp2_mul(T1, T1, Y2);
+	fp2_mul(T2, T2, Z2);
+	fp2_mul(T2, T2, Y1);
+	fp2_add(T6, T1, T2);
+	fp2_sub(T1, T1, T2);
+
+	if (fp2_is_zero(T1) && fp2_is_zero(T3)) {
+		return ep2_dbl_projc(R, P);
+	}
+	if (fp2_is_zero(T1) && fp2_is_zero(T6)) {
+		return ep2_set_infty(R);
+	}
+
+	fp2_sqr(T6, T1);
+	fp2_mul(T7, T3, Z1);
+	fp2_mul(T7, T7, Z2);
+	fp2_sqr(T8, T3);
+	fp2_mul(T5, T5, T8);
+	fp2_mul(T3, T3, T8);
+	fp2_mul(T4, T4, T8);
+	fp2_sub(T6, T6, T5);
+	fp2_sub(T4, T4, T6);
+	fp2_mul(T1, T1, T4);
+	fp2_mul(T2, T2, T3);
+	fp2_sub(T1, T1, T2);
+
+	fp2_copy(R->x, T6);
+	fp2_copy(R->y, T1);
+	fp2_copy(R->z, T7);
+}
+
+void test_paring(fp12_t r, ep2_t Q, ep_t P){
+
+	// a)
 	// const char *abits = "00100000000000000000000000000000000000010000101011101100100111110";
-	const char *abits = "1";
-	fp12_t f, g, fp12_tmp;
+	const char *abits = "101";
+	
+	fp12_t f, g, f_num, f_den, g_num, g_den, fp12_tmp;
+
 	ep2_t T, Q1, Q2, ep2_tmp, ep2_tmp2;
 
 	ep_t _p;
-	// fp12_t f, g;
+
 	bn_t n;
-	fp12_t num, den;
 
 	// null
 	ep_null(_p);
+
+	bn_null(n);
 
 	ep2_null(T);
 	ep2_null(Q1);
@@ -1931,18 +2081,19 @@ void test_paring(fp12_t r, ep2_t q, ep_t p){
 	ep2_null(ep2_tmp);
 	ep2_null(ep2_tmp2);
 
-	bn_null(n);
-
+	
 	fp12_null(f);
 	fp12_null(g);
+	fp12_null(f_num);
+	fp12_null(f_den);
+	fp12_null(g_num);
+	fp12_null(g_den);
 	fp12_null(fp12_tmp);
-	fp12_null(fp12_tmp2);
-	fp12_null(num);
-	fp12_null(den);
-
 
 	// new
 	ep_new(_p);
+
+	bn_new(n);
 
 	ep2_new(T);
 	ep2_new(Q1);
@@ -1950,21 +2101,25 @@ void test_paring(fp12_t r, ep2_t q, ep_t p){
 	ep2_new(ep2_tmp);
 	ep2_new(ep2_tmp2);
 
-	bn_new(n);
 	
 	fp12_new(f);
 	fp12_new(g);
+	fp12_new(f_num);
+	fp12_new(f_den);
+	fp12_new(g_num);
+	fp12_new(g_den);
 	fp12_new(fp12_tmp);
-	fp12_new(num);
-	fp12_new(den);
 
 	// f = 1
-	fp12_set_dig(f, 1);
+	// fp12_set_dig(f, 1);
 	
-	// ep2_copy
-	ep2_copy(T, q);
+	// b)
+	ep2_copy(T, Q);
+	fp12_set_dig(f_num, 1);
+	fp12_set_dig(f_den, 1);
 
-	ep_copy(_p, p);
+
+	// ep_copy(_p, p);
 	// ep_neg(_p, p);
 
 	// ep_print(_p);
@@ -1972,8 +2127,51 @@ void test_paring(fp12_t r, ep2_t q, ep_t p){
 
 	for(size_t i = 0; i < strlen(abits); i++)
 	{
-		fp12_sqr(f, f);  // f = f^2
 
+		// c)
+		fp12_sqr(f_num, f_num);
+		fp12_sqr(f_den, f_den);
+
+		sm9_eval_g_tangent(g_num, g_den, T, P);
+		fp12_mul(f_num, f_num, g_num);
+		fp12_mul(f_den, f_den, g_den);
+
+		printf("\n %d: T 1\n", i);
+		ep2_print(T);
+
+		ep2_dbl_projc(T, T);
+
+		// printf("\n %d: T 2\n", i);
+		// ep2_print(T);
+		// printf("\n %d: Q\n", i);
+		// ep2_print(Q);
+
+		// // ep2_add_full(T, T, Q);  // T = T + Q
+
+		// printf("\n %d: T 3\n", i);
+		// ep2_print(T);
+		
+		printf("\n %d: f_num \n", i);
+		fp12_print(f_num);
+		printf("\n %d: f_den \n", i);
+		fp12_print(f_den);
+
+		if (abits[i] == '1')
+		{
+			sm9_eval_g_line(g_num, g_den, T, Q, P);
+
+			// printf("\n %d: f_num 2 \n", i);
+			// fp12_print(f_num);
+			// printf("\n %d: f_den 2 \n", i);
+			// fp12_print(f_den);
+
+			fp12_mul(f_num, f_num, g_num);
+			fp12_mul(f_den, f_den, g_den);
+			ep2_add_full(T, T, Q);  // T = T + Q
+
+			// printf("\n %d: T 2\n", i);
+			// ep2_print(T);
+		}
 		// // 打印ep2_tmp
 		// printf("\n %d: T\n", i);
 		// ep2_print(T);
@@ -1991,19 +2189,17 @@ void test_paring(fp12_t r, ep2_t q, ep_t p){
 
 		// ep_print(p);
 		
-		printf("into...\n");
 		// pp_dbl_k12_basic(g, T, T, _p);  // T=[2]T, g=g_{T,T}(p)
-		sm9_eval_g_tangent(num, den, T, _p);
 		
 		// 调试
-		printf("\n _p \n", i);
-		ep_print(_p);
-		printf("\n T \n", i);
-		ep2_print(T);
-		printf("\n g_num \n", i);
-		fp12_print(num);
-		printf("\n g_den \n", i);
-		fp12_print(den);
+		// printf("\n _p \n", i);
+		// ep_print(_p);
+		// printf("\n T \n", i);
+		// ep2_print(T);
+		// printf("\n g_num \n", i);
+		// fp12_print(num);
+		// printf("\n g_den \n", i);
+		// fp12_print(den);
 		// 		// 打印T
 		// printf("\n %d: [2]T\n", i);
 		// ep2_print(T);
@@ -2020,16 +2216,17 @@ void test_paring(fp12_t r, ep2_t q, ep_t p){
 		// printf("\n %d: g\n", i);
 		// fp12_print(g);
 
-		fp12_mul(f, f, g);
+		// fp12_mul(f, f, g);
 		// printf("\n %d: f^2*g\n", i);
 		// fp12_print(f);
 
-		if (abits[i] == '1')
-		{
-			pp_add_k12_basic(g, T, q, p);  // T=T+q, g=g_{T,Q}(p)
-			fp12_mul(f, f, g);
-		}
+
 	}
+	printf("\n f_num \n");
+	fp12_print(f_num);
+	printf("\n f_den \n");
+	fp12_print(f_den);
+	return 0;
 	// printf("\nendfor:\n");
 	// fp12_print(f);
 
