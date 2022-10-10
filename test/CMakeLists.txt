@@ -78,5 +78,9 @@ if (WITH_MPC)
 	ADD_MODULE(mpc)
 endif(WITH_MPC)
 
+# 添加sm9测试模块
+ADD_MODULE(sm9)
+
+
 ADD_MODULE(rand)
 ADD_MODULE(core)

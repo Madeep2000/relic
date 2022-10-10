@@ -367,3 +367,5 @@ if(BENCH GREATER 0)
 endif(BENCH GREATER 0)
 
 add_subdirectory(sample)
+
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")

@@ -42,7 +42,11 @@ file(GLOB EC_SRCS ec/*.c)
 file(GLOB PC_SRCS pc/*.c)
 file(GLOB MPC_SRCS mpc/*.c)
 
+
 set(RELIC_SRCS ${CORE_SRCS})
+
+# 添加sm9.c
+list(APPEND RELIC_SRCS "sm9.c")
 
 if (TESTS GREATER 0)
 	list(APPEND RELIC_SRCS "relic_test.c")

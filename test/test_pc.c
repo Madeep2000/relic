@@ -2735,7 +2735,7 @@ void sm9_final_exponent(fp12_t r, const fp12_t f)
 // 打印fp12
 // printf("\n g_num \n", i);
 // fp12_print(num);
-void test_pairing(fp12_t r, ep2_t Q, ep_t P){
+void sm9_pairing(fp12_t r, ep2_t Q, ep_t P){
 	// a)
 	const char *abits = "00100000000000000000000000000000000000010000101011101100100111110";
 	// const char *abits = "101";
@@ -2927,7 +2927,7 @@ void init_Ppub(){
 	init_BETA_ALPHA();
 
 	// 测试正确性
-	test_pairing(r, Ppub, g1);
+	sm9_pairing(r, Ppub, g1);
 
 	printf("in: Ppub\n");
 	ep2_print(Ppub);
@@ -2942,14 +2942,16 @@ void init_Ppub(){
 	begin = clock();
 	for (size_t i = 0; i < count; i++)
 	{
-		test_pairing(r, Ppub, g1);
+		sm9_pairing(r, Ppub, g1);
 	}
-	end = clock();
-	printf("run %d times, total time: %d s, one time: %f s\n", \
-       	   count, (end-begin)/CLOCKS_PER_SEC, ((double)end-begin)/CLOCKS_PER_SEC/count);
-	free_BETA_ALPHA();
 	
+	end = clock();
+	printf("%f, %ld\n", 1.0*(end-begin), CLOCKS_PER_SEC);
+	printf("run %d times, total time: %f s, one time: %f s\n", \
+       	   count, 1.0*(end-begin)/CLOCKS_PER_SEC, 1.0*(end-begin)/CLOCKS_PER_SEC/count);
+	free_BETA_ALPHA();
 }
+
 int main(void) {
 	if (core_init() != RLC_OK) {
 		core_clean();
@@ -2993,4 +2995,3 @@ int main(void) {
 	core_clean();
 	return 0;
 }
-

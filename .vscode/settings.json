@@ -3,6 +3,8 @@
         "*.inc": "c",
         "limits": "c",
         "*.tcc": "c",
-        "cmath": "c"
+        "cmath": "c",
+        "sm9.h": "c",
+        "relic_test.h": "c"
     }
 }
