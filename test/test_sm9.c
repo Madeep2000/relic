@@ -2,15 +2,10 @@
 
 void test_sm9_pairing(){
 	g1_t g1;
-	g2_t g2;
 
 	g1_null(g1);
 	g1_new(g1);
 	g1_get_gen(g1);
-
-	g2_null(g2);
-	g2_new(g2);
-	g2_get_gen(g2);
 
 	ep2_t Ppub;
 	ep2_null(Ppub);
@@ -57,7 +52,11 @@ void test_sm9_pairing(){
 	end = clock();
 	printf("run %d times, total time: %f s, one time: %f s\n", \
        	   count, 1.0*(end-begin)/CLOCKS_PER_SEC, 1.0*(end-begin)/CLOCKS_PER_SEC/count);
+	
 	sm9_clean();
+	g1_free(g1);
+	ep2_free(Ppub);
+	fp12_free(r);
 }
 
 int main(void) {

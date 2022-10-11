@@ -58,6 +58,7 @@ static void bn_to_bits(const sm9_bn_t a, char bits[256])
 		}
 	}
 }
+
 // a*k = (a1, a2)*k = (a1*k, a2*k)
 static void fp2_mul_fp(fp2_t r, const fp2_t a, const fp_t k)
 {
@@ -883,8 +884,6 @@ void sm9_pairing(fp12_t r, ep2_t Q, ep_t P){
 
 	for(size_t i = 0; i < strlen(abits); i++)
 	{
-
-
 		// c)
 		fp12_sqr_t(f_num, f_num);
 		fp12_sqr_t(f_den, f_den);
