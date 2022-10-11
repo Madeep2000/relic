@@ -401,6 +401,14 @@ static void fp12_frobenius(fp12_t r, const fp12_t x)
 	fp4_t rb;
 	fp4_t rc;
 
+	fp4_null(ra);
+	fp4_null(rb);
+	fp4_null(rc);
+
+	fp4_new(ra);
+	fp4_new(rb);
+	fp4_new(rc);
+
 	fp2_conjugate(ra[0], xa[0]);
 	fp2_conjugate(ra[1], xa[1]);
 	fp2_mul_fp(ra[1], ra[1], SM9_ALPHA3);
@@ -416,6 +424,10 @@ static void fp12_frobenius(fp12_t r, const fp12_t x)
 	fp2_mul_fp(rc[1], rc[1], SM9_ALPHA5);
 
 	fp12_set(r, ra, rb, rc);
+
+	fp4_free(ra);
+	fp4_free(rb);
+	fp4_free(rc);
 }
 
 static void fp12_frobenius2(fp12_t r, const fp12_t x)
@@ -423,7 +435,15 @@ static void fp12_frobenius2(fp12_t r, const fp12_t x)
 	fp4_t a;
 	fp4_t b;
 	fp4_t c;
+	
+	fp4_null(a);
+	fp4_null(b);
+	fp4_null(c);
 
+	fp4_new(a);
+	fp4_new(b);
+	fp4_new(c);
+	
 	fp4_conjugate(a, x[0][0]);
 	fp4_conjugate(b, x[0][2]);
 	fp4_mul_fp(b, b, SM9_ALPHA2);
@@ -433,6 +453,10 @@ static void fp12_frobenius2(fp12_t r, const fp12_t x)
 	fp4_copy(r[0][0], a);
 	fp4_copy(r[0][2], b);
 	fp4_copy(r[1][1], c);
+
+	fp4_free(a);
+	fp4_free(b);
+	fp4_free(c);
 }
 
 static void fp12_frobenius3(fp12_t r, const fp12_t x)
@@ -481,6 +505,14 @@ static void fp12_frobenius6(fp12_t r, const fp12_t x)
 	fp4_t b;
 	fp4_t c;
 
+	fp4_null(a);
+	fp4_null(b);
+	fp4_null(c);
+
+	fp4_new(a);
+	fp4_new(b);
+	fp4_new(c);
+
 	fp4_copy(a, x[0][0]);
 	fp4_copy(b, x[0][2]);
 	fp4_copy(c, x[1][1]);
@@ -493,6 +525,10 @@ static void fp12_frobenius6(fp12_t r, const fp12_t x)
 	fp4_copy(r[0][0], a);
 	fp4_copy(r[0][2], b);
 	fp4_copy(r[1][1], c);
+
+	fp4_free(a);
+	fp4_free(b);
+	fp4_free(c);
 }
 
 static void ep2_pi1(ep2_t R, const ep2_t P)
@@ -686,6 +722,14 @@ static void sm9_eval_g_line(fp12_t num, fp12_t den, ep2_t T, ep2_t P, ep_t Q){
 	fp2_mul_fp(T2, T4, yQ);
 	fp2_neg(T2, T2);
 	fp2_copy(a1, T2);
+
+	fp2_free(T0);
+	fp2_free(T1);
+	fp2_free(T2);
+	fp2_free(T3);
+	fp2_free(T4);
+	fp2_free(two_inv);
+	bn_free(three);
 }
 
 static void sm9_eval_g_tangent(fp12_t num, fp12_t den, ep2_t P, ep_t Q){
@@ -841,15 +885,12 @@ void sm9_pairing(fp12_t r, ep2_t Q, ep_t P){
 
 	// null
 	ep_null(_p);
-
 	bn_null(n);
-
 	ep2_null(T);
 	ep2_null(Q1);
 	ep2_null(Q2);
 	ep2_null(ep2_tmp);
 	ep2_null(ep2_tmp2);
-
 	fp12_null(f);
 	fp12_null(g);
 	fp12_null(f_num);
@@ -858,17 +899,13 @@ void sm9_pairing(fp12_t r, ep2_t Q, ep_t P){
 	fp12_null(g_den);
 	fp12_null(fp12_tmp);
 
-	// new
 	ep_new(_p);
-
 	bn_new(n);
-
 	ep2_new(T);
 	ep2_new(Q1);
 	ep2_new(Q2);
 	ep2_new(ep2_tmp);
 	ep2_new(ep2_tmp2);
-
 	fp12_new(f);
 	fp12_new(g);
 	fp12_new(f_num);
@@ -927,6 +964,20 @@ void sm9_pairing(fp12_t r, ep2_t Q, ep_t P){
 
 	sm9_final_exponent(r, r);  // r = f^{(q^12-1)/r'}
 
+	ep_free(_p);
+	bn_free(n);
+	ep2_free(T);
+	ep2_free(Q1);
+	ep2_free(Q2);
+	ep2_free(ep2_tmp);
+	ep2_free(ep2_tmp2);
+	fp12_free(f);
+	fp12_free(g);
+	fp12_free(f_num);
+	fp12_free(f_den);
+	fp12_free(g_num);
+	fp12_free(g_den);
+	fp12_free(fp12_tmp);
 
 	return 0;
 }
