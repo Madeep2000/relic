@@ -318,7 +318,7 @@ static void fp12_inv_t(fp12_t r, const fp12_t a)
 	}
 }
 
-static void fp12_sqr_t (fp12_t r, const fp12_t a)
+static void fp12_sqr_t(fp12_t r, const fp12_t a)
 {
 	fp4_t r0, r1, r2, t;
 
@@ -376,13 +376,8 @@ static void fp12_pow(fp12_t r, const fp12_t a, const sm9_bn_t k)
 	// assert(sm9_bn_cmp(k, SM9_P_MINUS_ONE) < 0);
 	fp12_set_dig(t, 0);
 
-	// for (size_t i = 0; i < 8; i++)
-	// {
-	// 	printf("k[%d]: %d\n", i, k[i]);
-	// }
 	
 	bn_to_bits(k, kbits);
-	// printf("bits: %s\n", kbits);
 	fp12_set_dig(t, 1);
 	for (i = 0; i < 256; i++) {
 		fp12_sqr_t(t, t);
@@ -502,10 +497,6 @@ static void fp12_frobenius6(fp12_t r, const fp12_t x)
 static void ep2_pi1(ep2_t R, const ep2_t P)
 {
 	//const c = 0x3f23ea58e5720bdb843c6cfa9c08674947c5c86e0ddd04eda91d8354377b698bn;
-	// const sm9_fp_t c = {
-	// 	0x377b698b, 0xa91d8354, 0x0ddd04ed, 0x47c5c86e,
-	// 	0x9c086749, 0x843c6cfa, 0xe5720bdb, 0x3f23ea58,
-	// };
 	fp_t c;
 	fp_null(c);
 	fp_new(c);
@@ -525,11 +516,6 @@ static void ep2_pi1(ep2_t R, const ep2_t P)
 static void ep2_pi2(ep2_t R, const ep2_t P)
 {
 	//c = 0xf300000002a3a6f2780272354f8b78f4d5fc11967be65334
-	// const sm9_fp_t c = {
-	// 	0x7be65334, 0xd5fc1196, 0x4f8b78f4, 0x78027235,
-	// 	0x02a3a6f2, 0xf3000000, 0, 0,
-	// };
-
 	fp_t c;
 	fp_null(c);
 	fp_new(c);
@@ -740,63 +726,27 @@ static void sm9_eval_g_tangent(fp12_t num, fp12_t den, ep2_t P, ep_t Q){
 	fp2_inv(two_inv, two_inv);
 	bn_set_dig(three, 3);
 	
-	// printf("\n num \n");
-	// fp12_print(num);
-
-	// printf("\n den \n");
-	// fp12_print(den);
-
 	fp2_sqr(t0, ZP);
 	fp2_mul(t1, t0, ZP);
 	fp2_mul(b1, t1, YP);
-
-	// printf("\n b1 \n");
-	// fp2_print(b1);
-
 	fp2_mul_fp(t2, b1, yQ);
-
-	// printf("\n b1 \n");
-	// fp2_print(b1);
-	// printf("\n yQ \n");
-	// fp2_print(yQ);
-	// printf("\n t2 \n");
-	// fp2_print(t2);
-
 	fp2_neg(a1, t2);
-	
-	// printf("\n a1 \n");
-	// fp2_print(a1);
-
 	fp2_sqr(t1, XP);
 	fp2_mul(t0, t0, t1);
 	fp2_mul_fp(t0, t0, xQ);
-	// printf("\n t0 \n");
-	// fp2_print(t0);
-
 	fp2_mul_dig(t0, t0, 3);
-	
-	// printf("\n t0 \n");
-	// fp2_print(t0);
-
 	fp2_mul(a4, t0, two_inv);
-
-	// printf("\n a4 \n");
-	// fp2_print(a4);
-
 	fp2_mul(t1, t1, XP);
 	fp2_mul_dig(t1, t1, 3);
 	fp2_mul(t1, t1, two_inv);
 	fp2_sqr(t0, YP);
 	fp2_sub(a0, t0, t1);
 
-	// printf("\n a0 \n");
-	// fp2_print(a0);
 	fp2_free(t0);
 	fp2_free(t1);
 	fp2_free(t2);
 	fp2_free(two_inv);
 	bn_free(three);
-
 }
 
 static void sm9_final_exponent_hard_part(fp12_t r, const fp12_t f)
@@ -819,20 +769,14 @@ static void sm9_final_exponent_hard_part(fp12_t r, const fp12_t f)
 	fp12_new(t3);
 
 	fp12_pow(t0, f, a3);
-	// printf("\n hard1 t0 \n");
-	// fp12_print(t0);
 	fp12_inv_t(t0, t0);
 	fp12_frobenius(t1, t0);
 	fp12_mul_t(t1, t0, t1);
-	// printf("\n hard1 t1 \n");
-	// fp12_print(t1);
 
 	fp12_mul_t(t0, t0, t1);
 	fp12_frobenius(t2, f);
 	fp12_mul_t(t3, t2, f);
 	fp12_pow(t3, t3, nine);
-	// printf("\n hard2 t3 \n");
-	// fp12_print(t3);
 
 	fp12_mul_t(t0, t0, t3);
 	fp12_sqr_t(t3, f);
@@ -842,17 +786,11 @@ static void sm9_final_exponent_hard_part(fp12_t r, const fp12_t f)
 	fp12_mul_t(t2, t2, t1);
 	fp12_frobenius2(t1, f);
 	fp12_mul_t(t1, t1, t2);
-	// printf("\n hard3 t1 \n");
-	// fp12_print(t1);
 
 	fp12_pow(t2, t1, a2);
 	fp12_mul_t(t0, t2, t0);
 	fp12_frobenius3(t1, f);
-	// printf("\n hard4 frobenius3 \n");
-	// fp12_print(t1);
 	fp12_mul_t(t1, t1, t0);
-	// printf("\n hard4 t1 \n");
-	// fp12_print(t1);
 
 	fp12_copy(r, t1);
 
@@ -874,33 +812,16 @@ static void sm9_final_exponent(fp12_t r, const fp12_t f)
 	fp12_new(t1);
 
 	fp12_frobenius6(t0, f);
-	// printf("\n epx1 t0 \n");
-	// fp12_print(t0);
 	
 	fp12_inv_t(t1, f);
-	// printf("\n f \n");
-	// fp12_print(f);
-	// printf("\n t1 \n");
-	// fp12_print(t1);
 
 	fp12_mul_t(t0, t0, t1);
-	// printf("\n epx2 t0 \n");
-	// fp12_print(t0);
 
 	fp12_frobenius2(t1, t0);
 
-	// printf("\n epx3 t1 \n");
-	// fp12_print(t1);
-
 	fp12_mul_t(t0, t0, t1);
 
-	// printf("\n epx4 t0 \n");
-	// fp12_print(t0);
-
 	sm9_final_exponent_hard_part(t0, t0);
-
-	// printf("\n epx5 t0 \n");
-	// fp12_print(t0);
 	
 	fp12_copy(r, t0);
 
@@ -908,22 +829,9 @@ static void sm9_final_exponent(fp12_t r, const fp12_t f)
 	fp12_free(t1);
 }
 
-// 调试打印
-// 打印ep2
-// printf("\n %d: T\n", i);
-// ep2_print(T);
-
-// 打印ep
-// printf("\n %d: T\n", i);
-// ep_print(p);
-
-// 打印fp12
-// printf("\n g_num \n", i);
-// fp12_print(num);
 void sm9_pairing(fp12_t r, ep2_t Q, ep_t P){
 	// a)
 	const char *abits = "00100000000000000000000000000000000000010000101011101100100111110";
-	// const char *abits = "101";
 	
 	fp12_t f, g, f_num, f_den, g_num, g_den, fp12_tmp;
 	ep2_t T, Q1, Q2, ep2_tmp, ep2_tmp2;
@@ -981,56 +889,25 @@ void sm9_pairing(fp12_t r, ep2_t Q, ep_t P){
 		fp12_sqr_t(f_num, f_num);
 		fp12_sqr_t(f_den, f_den);
 
-		// printf("\n %d: f_num 1 \n", i);
-		// fp12_print(f_num);
-		// printf("\n %d: f_den 1 \n", i);
-		// fp12_print(f_den);
-
 		sm9_eval_g_tangent(g_num, g_den, T, P);
 		fp12_mul_t(f_num, f_num, g_num);
 		fp12_mul_t(f_den, f_den, g_den);
 
 		ep2_dbl_projc(T, T);
 
-		// printf("\n %d \n", i);
-		// ep2_print(T);
-
 		if (abits[i] == '1')
 		{
 			sm9_eval_g_line(g_num, g_den, T, Q, P);
 
-			// printf("\n %d: in f_num \n", i);
-			// fp12_print(f_num);
-			// printf("\n %d: in f_den \n", i);
-			// fp12_print(f_den);
-			// printf("\n %d: in g_num \n", i);
-			// fp12_print(g_num);
-			// printf("\n %d: in g_den \n", i);
-			// fp12_print(g_den);
-
 			fp12_mul_t(f_num, f_num, g_num);
 			fp12_mul_t(f_den, f_den, g_den);
-
-			// printf("\n %d: f_num 2 \n", i);
-			// fp12_print(f_num);
-			// printf("\n %d: f_den 2 \n", i);
-			// fp12_print(f_den);
 
 			ep2_add_full(T, T, Q);  // T = T + Q
 		}
 	}
-
-
 	// d)
 	ep2_pi1(Q1, Q);  // Q1 = pi_q(Q)
 	ep2_pi2(Q2, Q);  // Q2 = pi_{q^2}(Q), Q2 = -Q2
-
-	// printf("\n Q \n");
-	// ep2_print(Q);
-	// printf("\n Q1 \n");
-	// ep2_print(Q1);
-	// printf("\n Q2 \n");
-	// ep2_print(Q2);
 	
 	// e)
 	sm9_eval_g_line(g_num, g_den, T, Q1, P);  // g = g_{T,Q1}(P)
@@ -1044,29 +921,13 @@ void sm9_pairing(fp12_t r, ep2_t Q, ep_t P){
 	fp12_mul_t(f_den, f_den, g_den);
 	ep2_add_full(T, T, Q2);  // T = T - Q2
 
-	// printf("\n f_num \n");
-	// fp12_print(f_num);
-	// printf("\n f_den \n");
-	// fp12_print(f_den);
-
 	// g)
-	// printf("\n f_den \n");
-	// fp12_print(f_den);
-
 	fp12_inv_t(f_den, f_den);  // f_den = f_den^{-1}
-
-	// printf("\n f_den \n");
-	// fp12_print(f_den);
 
 	fp12_mul_t(r, f_num, f_den);  // r = f_num*f_den = f
 
-	// printf("\n r \n");
-	// fp12_print(r);
-
 	sm9_final_exponent(r, r);  // r = f^{(q^12-1)/r'}
 
-	// printf("\n r \n");
-	// fp12_print(r);
 
 	return 0;
 }
