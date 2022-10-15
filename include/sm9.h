@@ -2,6 +2,7 @@
 #define SM9_H
 
 #include <stdio.h>
+#include <omp.h>
 
 #include "relic.h"
 
@@ -13,4 +14,6 @@ typedef uint64_t sm9_bn_t[8];
 void sm9_init();
 void sm9_clean();
 void sm9_pairing(fp12_t r, const ep2_t Q, const ep_t P);
+// 多线程
+void sm9_pairing_omp(fp12_t r_arr[], const ep2_t Q_arr[], const ep_t P_arr[], const size_t arr_size, const size_t threads_num);
 #endif

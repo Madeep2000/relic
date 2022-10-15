@@ -4,12 +4,22 @@
 #include <pthread.h>
 #include <omp.h>
 
-int count_m=100;
-g1_t g1;
-ep2_t Ppub;
-fp12_t r;
-
+void sm9_pairing_omp_t(fp12_t r_arr[], const ep2_t Q_arr[], const ep_t P_arr[], const size_t arr_size, const size_t threads_num){
+	omp_set_num_threads(threads_num);	
+	#pragma omp parallel	
+	{
+		int id = omp_get_thread_num();
+		printf("id=%d\n", id);
+		for (size_t i = 0; i < arr_size; i+=threads_num)
+		{
+			sm9_pairing(r_arr[(i+id)%arr_size], Q_arr[(i+id)%arr_size], P_arr[(i+id)%arr_size]);
+		}
+	}
+}
 void test_sm9_pairing(){
+	g1_t g1;
+	ep2_t Ppub;
+	fp12_t r;
 
 	g1_null(g1);
 	g1_new(g1);
@@ -69,20 +79,19 @@ void test_sm9_pairing(){
 	}
 	
 	double begin, end;
-	
-	int threads_num = 3;
+	int threads_num = 4;
 	omp_set_num_threads(threads_num);
 	begin = omp_get_wtime();
-	
-	#pragma omp parallel	
-	{
-		int id = omp_get_thread_num();
-		printf("id=%d\n", id);
-		for (size_t i = 0; i < count; i+=threads_num)
-		{
-			sm9_pairing(r_arr[i], Ppub_arr[i], g1_arr[i]);
-		}
-	}
+	sm9_pairing_omp_t(r_arr, Ppub_arr, g1_arr, count, threads_num);
+	// #pragma omp parallel	
+	// {
+	// 	int id = omp_get_thread_num();
+	// 	printf("id=%d\n", id);
+	// 	for (size_t i = 0; i < count; i+=threads_num)
+	// 	{
+	// 		sm9_pairing(r_arr[i+id], Ppub_arr[i+id], g1_arr[i+id]);
+	// 	}
+	// }
 	end = omp_get_wtime();
 	printf("run %d times, total time: %f s, one time: %f s\n", \
        	   count, 1.0*(end-begin), 1.0*(end-begin)/count);

@@ -993,3 +993,16 @@ void sm9_pairing(fp12_t r, const ep2_t Q, const ep_t P){
 
 	return 0;
 }
+
+void sm9_pairing_omp(fp12_t r_arr[], const ep2_t Q_arr[], const ep_t P_arr[], const size_t arr_size, const size_t threads_num){
+	omp_set_num_threads(threads_num);	
+	#pragma omp parallel	
+	{
+		int id = omp_get_thread_num();
+		printf("id=%d\n", id);
+		for (size_t i = 0; i < arr_size; i+=threads_num)
+		{
+			sm9_pairing(r_arr[(i+id)%arr_size], Q_arr[(i+id)%arr_size], P_arr[(i+id)%arr_size]);
+		}
+	}
+}
