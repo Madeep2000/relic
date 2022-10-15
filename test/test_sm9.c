@@ -1,6 +1,6 @@
 #include "sm9.h"
 #include <time.h>
-
+#include "debug.h"
 void test_sm9_pairing(){
 	g1_t g1;
 
@@ -35,24 +35,25 @@ void test_sm9_pairing(){
 
 	// 测试正确性
 	sm9_pairing(r, Ppub, g1);
-	printf("in: Ppub\n");
-	ep2_print(Ppub);
-	printf("in: g1\n");
-	ep_print(g1);
-	printf("out: r\n");
-	fp12_print(r);
+	// printf("in: Ppub\n");
+	// ep2_print(Ppub);
+	// printf("in: g1\n");
+	// ep_print(g1);
+	// printf("out: r\n");
+	// fp12_print(r);
 	
 	// 测试性能
-	clock_t begin, end;
-	size_t count=1000;
-	begin = clock();
-	for (size_t i = 0; i < count; i++)
-	{
-		sm9_pairing(r, Ppub, g1);
-	}
-	end = clock();
-	printf("run %d times, total time: %f s, one time: %f s\n", \
-       	   count, 1.0*(end-begin)/CLOCKS_PER_SEC, 1.0*(end-begin)/CLOCKS_PER_SEC/count);
+	// PERFORMANCE_TEST("pairing", sm9_pairing(r, Ppub, g1), 1000);
+	// clock_t begin, end;
+	// size_t count=1000;
+	// begin = clock();
+	// for (size_t i = 0; i < count; i++)
+	// {
+	// 	sm9_pairing(r, Ppub, g1);
+	// }
+	// end = clock();
+	// printf("run %d times, total time: %f s, one time: %f s\n", \
+    //    	   count, 1.0*(end-begin)/CLOCKS_PER_SEC, 1.0*(end-begin)/CLOCKS_PER_SEC/count);
 	
 	sm9_clean();
 	g1_free(g1);

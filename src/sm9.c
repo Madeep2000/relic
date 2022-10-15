@@ -1,5 +1,5 @@
 #include "sm9.h"
-
+#include "../test/debug.h"
 void sm9_init(){
 	// beta   = 0x6c648de5dc0a3f2cf55acc93ee0baf159f9d411806dc5177f5b21fd3da24d011
 	// alpha1 = 0x3f23ea58e5720bdb843c6cfa9c08674947c5c86e0ddd04eda91d8354377b698b
@@ -379,7 +379,6 @@ static void fp12_pow(fp12_t r, const fp12_t a, const sm9_bn_t k)
 
 	// assert(sm9_bn_cmp(k, SM9_P_MINUS_ONE) < 0);
 	fp12_set_dig(t, 0);
-
 	
 	bn_to_bits(k, kbits);
 	fp12_set_dig(t, 1);
@@ -817,8 +816,11 @@ static void sm9_final_exponent_hard_part(fp12_t r, const fp12_t f)
 	fp12_new(t3);
 
 	fp12_pow(t0, f, a3);
+	// PERFORMANCE_TEST("fp12_pow(t0, f, a3)",fp12_pow(t0, f, a3),1000);
 	fp12_inv_t(t0, t0);
+	PERFORMANCE_TEST("fp12_inv_t(t0, t0)",fp12_inv_t(t0, t0),1000);
 	fp12_frobenius(t1, t0);
+	// PERFORMANCE_TEST("fp12_frobenius(t1, t0)",fp12_frobenius(t1, t0),1000);
 	fp12_mul_t(t1, t0, t1);
 
 	fp12_mul_t(t0, t0, t1);
@@ -833,9 +835,11 @@ static void sm9_final_exponent_hard_part(fp12_t r, const fp12_t f)
 	fp12_sqr_t(t2, t2);
 	fp12_mul_t(t2, t2, t1);
 	fp12_frobenius2(t1, f);
+	// PERFORMANCE_TEST("fp12_frobenius2(t1, f)",fp12_frobenius2(t1, f),1000);
 	fp12_mul_t(t1, t1, t2);
 
 	fp12_pow(t2, t1, a2);
+	// PERFORMANCE_TEST("fp12_pow(t2, t1, a2)",fp12_pow(t2, t1, a2),1000);
 	fp12_mul_t(t0, t2, t0);
 	fp12_frobenius3(t1, f);
 	fp12_mul_t(t1, t1, t0);
@@ -859,27 +863,30 @@ static void sm9_final_exponent(fp12_t r, const fp12_t f)
 	fp12_new(t0);
 	fp12_new(t1);
 
-	fp12_frobenius6(t0, f);
 	
+	fp12_frobenius6(t0, f);
+	// PERFORMANCE_TEST("fp12_frobenius6",fp12_frobenius6(t0, f),1000);
 	fp12_inv_t(t1, f);
 
 	fp12_mul_t(t0, t0, t1);
 
 	fp12_frobenius2(t1, t0);
-
+	// PERFORMANCE_TEST("fp12_frobenius2",fp12_frobenius2(t1, t0),1000);
 	fp12_mul_t(t0, t0, t1);
 
 	sm9_final_exponent_hard_part(t0, t0);
-	
+	// PERFORMANCE_TEST("sm9_final_exponent_hard_part",sm9_final_exponent_hard_part(t0, t0),1000);
 	fp12_copy(r, t0);
 
 	fp12_free(t0);
 	fp12_free(t1);
 }
 
+
 void sm9_pairing(fp12_t r, ep2_t Q, ep_t P){
 	// a)
 	const char *abits = "00100000000000000000000000000000000000010000101011101100100111110";
+	// const char *abits = "1";
 	
 	fp12_t f, g, f_num, f_den, g_num, g_den, fp12_tmp;
 	ep2_t T, Q1, Q2, ep2_tmp, ep2_tmp2;
@@ -929,6 +936,7 @@ void sm9_pairing(fp12_t r, ep2_t Q, ep_t P){
 		fp12_sqr_t(f_den, f_den);
 
 		sm9_eval_g_tangent(g_num, g_den, T, P);
+		// PERFORMANCE_TEST("sm9_eval_g_tangent",sm9_eval_g_tangent(g_num, g_den, T, P),10000);
 		fp12_mul_t(f_num, f_num, g_num);
 		fp12_mul_t(f_den, f_den, g_den);
 
@@ -937,7 +945,7 @@ void sm9_pairing(fp12_t r, ep2_t Q, ep_t P){
 		if (abits[i] == '1')
 		{
 			sm9_eval_g_line(g_num, g_den, T, Q, P);
-
+			// PERFORMANCE_TEST("sm9_eval_g_line",sm9_eval_g_line(g_num, g_den, T, Q, P),10000);
 			fp12_mul_t(f_num, f_num, g_num);
 			fp12_mul_t(f_den, f_den, g_den);
 
@@ -966,6 +974,7 @@ void sm9_pairing(fp12_t r, ep2_t Q, ep_t P){
 	fp12_mul_t(r, f_num, f_den);  // r = f_num*f_den = f
 
 	sm9_final_exponent(r, r);  // r = f^{(q^12-1)/r'}
+	// PERFORMANCE_TEST("sm9_final_exponent", sm9_final_exponent(r, r), 1000);
 
 	ep_free(_p);
 	bn_free(n);
