@@ -1,4 +1,5 @@
 #include "sm9.h"
+#include <time.h>
 
 void test_sm9_pairing(){
 	g1_t g1;
@@ -59,6 +60,33 @@ void test_sm9_pairing(){
 	fp12_free(r);
 }
 
+void test_fp12_mul(){
+	fp12_t t1, t2, t3;
+
+	fp12_null(t1);
+	fp12_null(t2);
+	fp12_null(t3);
+
+	fp12_new(t1);
+	fp12_new(t2);
+	fp12_new(t3);
+
+	fp12_rand(t1);
+	fp12_rand(t2);
+
+	printf("1:\n");
+	fp12_mul_lazyr(t3, t1, t2);
+	fp12_print(t3);
+
+	printf("2:\n");
+	fp12_mul(t3, t1, t2);
+	fp12_print(t3);
+
+
+	fp12_free(t1);
+	fp12_free(t2);
+	fp12_free(t3);
+}
 int main(void) {
 	if (core_init() != RLC_OK) {
 		core_clean();
@@ -71,9 +99,10 @@ int main(void) {
 		return 0;
 	}
 
-	// pc_param_print();
+	pc_param_print();
 
 	test_sm9_pairing();
+	// test_fp12_mul();
 
 	core_clean();
 	return 0;

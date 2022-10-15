@@ -202,6 +202,9 @@ static void fp4_conjugate(fp4_t r, const fp4_t a)
 	fp2_neg(r[1], a[1]);
 }
 
+static void fp12_mul_t2(fp12_t r, const fp12_t a, const fp12_t b){
+	fp12_mul(r, a, b);
+}
 static void fp12_mul_t(fp12_t r, const fp12_t a, const fp12_t b)
 {
 	fp4_t r0, r1, r2, t;
