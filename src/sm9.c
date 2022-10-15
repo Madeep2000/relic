@@ -818,7 +818,7 @@ static void sm9_final_exponent_hard_part(fp12_t r, const fp12_t f)
 	fp12_pow(t0, f, a3);
 	// PERFORMANCE_TEST("fp12_pow(t0, f, a3)",fp12_pow(t0, f, a3),1000);
 	fp12_inv_t(t0, t0);
-	PERFORMANCE_TEST("fp12_inv_t(t0, t0)",fp12_inv_t(t0, t0),1000);
+	// PERFORMANCE_TEST("fp12_inv_t(t0, t0)",fp12_inv_t(t0, t0),1000);
 	fp12_frobenius(t1, t0);
 	// PERFORMANCE_TEST("fp12_frobenius(t1, t0)",fp12_frobenius(t1, t0),1000);
 	fp12_mul_t(t1, t0, t1);
@@ -883,7 +883,7 @@ static void sm9_final_exponent(fp12_t r, const fp12_t f)
 }
 
 
-void sm9_pairing(fp12_t r, ep2_t Q, ep_t P){
+void sm9_pairing(fp12_t r, const ep2_t Q, const ep_t P){
 	// a)
 	const char *abits = "00100000000000000000000000000000000000010000101011101100100111110";
 	// const char *abits = "1";

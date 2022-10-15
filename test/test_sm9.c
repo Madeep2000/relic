@@ -1,14 +1,21 @@
 #include "sm9.h"
 #include <time.h>
 #include "debug.h"
+#include <pthread.h>
+#include <omp.h>
+
+int count_m=100;
+g1_t g1;
+ep2_t Ppub;
+fp12_t r;
+
 void test_sm9_pairing(){
-	g1_t g1;
 
 	g1_null(g1);
 	g1_new(g1);
 	g1_get_gen(g1);
 
-	ep2_t Ppub;
+
 	ep2_null(Ppub);
 	ep2_new(Ppub);
 
@@ -26,15 +33,13 @@ void test_sm9_pairing(){
 	fp_read_str(Ppub->z[0], z0, strlen(z0), 16);
 	fp_read_str(Ppub->z[1], z1, strlen(z1), 16);
 
-	fp12_t r;
-
 	fp12_null(r);
 	fp12_new(r);
 
 	sm9_init();
 
 	// 测试正确性
-	sm9_pairing(r, Ppub, g1);
+	// sm9_pairing(r, Ppub, g1);
 	// printf("in: Ppub\n");
 	// ep2_print(Ppub);
 	// printf("in: g1\n");
@@ -44,17 +49,51 @@ void test_sm9_pairing(){
 	
 	// 测试性能
 	// PERFORMANCE_TEST("pairing", sm9_pairing(r, Ppub, g1), 1000);
-	// clock_t begin, end;
-	// size_t count=1000;
-	// begin = clock();
-	// for (size_t i = 0; i < count; i++)
-	// {
-	// 	sm9_pairing(r, Ppub, g1);
-	// }
-	// end = clock();
-	// printf("run %d times, total time: %f s, one time: %f s\n", \
-    //    	   count, 1.0*(end-begin)/CLOCKS_PER_SEC, 1.0*(end-begin)/CLOCKS_PER_SEC/count);
+	pthread_attr_t attr; // 定义线程属性
+
+	size_t count=1000;
+	fp12_t r_arr[count];
+	g1_t g1_arr[count];
+	ep2_t Ppub_arr[count];
+
+	for (size_t i = 0; i < count; i++)
+	{
+		fp12_null(r_arr[i]);
+		fp12_new(r_arr[i]);
+		g1_null(g1_arr[i]);
+		g1_new(g1_arr[i]);
+		ep2_null(Ppub_arr[i]);
+		ep2_new(Ppub_arr[i]);
+		g1_copy(g1_arr[i], g1);
+		ep2_copy(Ppub_arr[i], Ppub);
+	}
 	
+	double begin, end;
+	
+	int threads_num = 3;
+	omp_set_num_threads(threads_num);
+	begin = omp_get_wtime();
+	
+	#pragma omp parallel	
+	{
+		int id = omp_get_thread_num();
+		printf("id=%d\n", id);
+		for (size_t i = 0; i < count; i+=threads_num)
+		{
+			sm9_pairing(r_arr[i], Ppub_arr[i], g1_arr[i]);
+		}
+	}
+	end = omp_get_wtime();
+	printf("run %d times, total time: %f s, one time: %f s\n", \
+       	   count, 1.0*(end-begin), 1.0*(end-begin)/count);
+
+	// 清理空间
+	for (size_t i = 0; i < count; i++)
+	{
+		fp12_free(r_arr[i]);
+		g1_free(g1_arr[i]);
+		ep2_free(Ppub_arr[i]);
+	}
 	sm9_clean();
 	g1_free(g1);
 	ep2_free(Ppub);
@@ -88,6 +127,8 @@ void test_fp12_mul(){
 	fp12_free(t2);
 	fp12_free(t3);
 }
+
+
 int main(void) {
 	if (core_init() != RLC_OK) {
 		core_clean();

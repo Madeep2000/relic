@@ -1,4 +1,5 @@
 macro(ADD_MODULE MODULE)
+	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
 	add_executable(test_${MODULE} test_${MODULE}.c)
 	if (STLIB)
 		target_link_libraries(test_${MODULE} ${RELIC_S})
@@ -7,6 +8,7 @@ macro(ADD_MODULE MODULE)
 			target_link_libraries(test_${MODULE} ${RELIC})
 		endif(SHLIB)
 	endif(STLIB)
+	target_link_libraries(test_${MODULE} pthread)
 	add_test(test_${MODULE} ${SIMUL} ${SIMAR} ${EXECUTABLE_OUTPUT_PATH}/test_${MODULE})
 endmacro(ADD_MODULE)
 

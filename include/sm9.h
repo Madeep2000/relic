@@ -12,6 +12,5 @@ typedef uint64_t sm9_bn_t[8];
 
 void sm9_init();
 void sm9_clean();
-void sm9_pairing();
-
+void sm9_pairing(fp12_t r, const ep2_t Q, const ep_t P);
 #endif
