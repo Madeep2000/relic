@@ -623,6 +623,7 @@ static void ep2_add_full(ep2_t R, ep2_t P, ep2_t Q)
 	if (fp2_is_zero(T1) && fp2_is_zero(T3)) {
 		return ep2_dbl_projc(R, P);
 	}
+	
 	if (fp2_is_zero(T1) && fp2_is_zero(T6)) {
 		return ep2_set_infty(R);
 	}

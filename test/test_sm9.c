@@ -6,16 +6,13 @@
 
 void sm9_pairing_omp_t(fp12_t r_arr[], const ep2_t Q_arr[], const ep_t P_arr[], const size_t arr_size, const size_t threads_num){
 	omp_set_num_threads(threads_num);	
-	#pragma omp parallel	
+	#pragma omp parallel for
+	for (size_t i = 0; i < arr_size; i++)
 	{
-		int id = omp_get_thread_num();
-		printf("id=%d\n", id);
-		for (size_t i = 0; i < arr_size; i+=threads_num)
-		{
-			sm9_pairing(r_arr[(i+id)%arr_size], Q_arr[(i+id)%arr_size], P_arr[(i+id)%arr_size]);
-		}
+		sm9_pairing(r_arr[(i)], Q_arr[(i)], P_arr[(i)]);
 	}
 }
+
 void test_sm9_pairing(){
 	g1_t g1;
 	ep2_t Ppub;
@@ -48,15 +45,37 @@ void test_sm9_pairing(){
 
 	sm9_init();
 
+#if 1
 	// 测试正确性
-	// sm9_pairing(r, Ppub, g1);
+	sm9_pairing(r, Ppub, g1);
 	// printf("in: Ppub\n");
 	// ep2_print(Ppub);
 	// printf("in: g1\n");
 	// ep_print(g1);
 	// printf("out: r\n");
 	// fp12_print(r);
-	
+
+	// pp_map_tatep_k12(r, g1, Ppub);
+	// printf("tatep: r\n");
+	// fp12_print(r);
+
+	// pp_map_weilp_k12(r, g1, Ppub);
+	// printf("weilp: r\n");
+	// fp12_print(r);
+
+	// pp_map_oatep_k12(r, g1, Ppub);
+	// printf("oatep: r\n");
+	// fp12_print(r);
+#endif
+
+// #if 1
+// 	PERFORMANCE_TEST("pairing", sm9_pairing(r, Ppub, g1), 1000);
+// 	PERFORMANCE_TEST("pp_map_tatep_k12(r, g1, Ppub)", pp_map_tatep_k12(r, g1, Ppub), 1000);
+// 	PERFORMANCE_TEST("pp_map_weilp_k12(r, g1, Ppub)", pp_map_weilp_k12(r, g1, Ppub), 1000);
+// 	PERFORMANCE_TEST("pp_map_oatep_k12(r, g1, Ppub)", pp_map_oatep_k12(r, g1, Ppub), 1000);
+// #endif
+
+#if 1
 	// 测试性能
 	// PERFORMANCE_TEST("pairing", sm9_pairing(r, Ppub, g1), 1000);
 	pthread_attr_t attr; // 定义线程属性
@@ -79,7 +98,7 @@ void test_sm9_pairing(){
 	}
 	
 	double begin, end;
-	int threads_num = 4;
+	int threads_num = 5;
 	omp_set_num_threads(threads_num);
 	begin = omp_get_wtime();
 	sm9_pairing_omp_t(r_arr, Ppub_arr, g1_arr, count, threads_num);
@@ -93,9 +112,8 @@ void test_sm9_pairing(){
 	// 	}
 	// }
 	end = omp_get_wtime();
-	printf("run %d times, total time: %f s, one time: %f s\n", \
-       	   count, 1.0*(end-begin), 1.0*(end-begin)/count);
-
+	printf("run %d times, threads num: %d, total time: %f s, one time: %f s\n", \
+       	   count, threads_num, 1.0*(end-begin), 1.0*(end-begin)/count);
 	// 清理空间
 	for (size_t i = 0; i < count; i++)
 	{
@@ -103,6 +121,8 @@ void test_sm9_pairing(){
 		g1_free(g1_arr[i]);
 		ep2_free(Ppub_arr[i]);
 	}
+#endif
+
 	sm9_clean();
 	g1_free(g1);
 	ep2_free(Ppub);
