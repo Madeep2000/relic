@@ -174,7 +174,7 @@ int main(void) {
 
 	test_sm9_pairing();
 	// test_fp12_mul();
-
+	// test
 	core_clean();
 	return 0;
 }
