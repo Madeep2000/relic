@@ -202,10 +202,7 @@ static void fp4_conjugate(fp4_t r, const fp4_t a)
 	fp2_neg(r[1], a[1]);
 }
 
-static void fp12_mul_t2(fp12_t r, const fp12_t a, const fp12_t b){
-	fp12_mul(r, a, b);
-}
-static void fp12_mul_t(fp12_t r, const fp12_t a, const fp12_t b)
+static void fp12_mul_t1(fp12_t r, const fp12_t a, const fp12_t b)
 {
 	fp4_t r0, r1, r2, t;
 
@@ -245,6 +242,128 @@ static void fp12_mul_t(fp12_t r, const fp12_t a, const fp12_t b)
 	fp4_free(r1);
 	fp4_free(r2);
 	fp4_free(t);
+}
+
+void fp12_mul_unr_t(dv12_t c, fp12_t a, fp12_t b) {
+	dv4_t u0, u1, u2, u3, u4;
+	fp4_t t0, t1;
+
+	dv4_null(u0);
+	dv4_null(u1);
+	dv4_null(u2);
+	dv4_null(u3);
+	dv4_null(u4);
+	fp4_null(t0);
+	fp4_null(t1);
+
+	RLC_TRY {
+		dv4_new(u0);
+		dv4_new(u1);
+		dv4_new(u2);
+		dv4_new(u3);
+		dv4_new(u4);
+		fp4_new(t0);
+		fp4_new(t1);
+
+		/* Karatsuba algorithm. */
+
+		/* u0 = a_0 * b_0. */
+		fp4_mul_unr(u0, a[0][0], b[0][0]);
+		/* u1 = a_1 * b_1. */
+		fp4_mul_unr(u1, a[0][2], b[0][2]);
+		/* u2 = a_2 * b_2. */
+		fp4_mul_unr(u2, a[1][1], b[1][1]);
+
+		fp4_add(t0, a[0][2], a[1][1]);
+		fp4_add(t1, b[0][2], b[1][1]);
+		/* u3 = ( a1 + a2 )*( b1 + b2 ) */
+		fp4_mul_unr(u3, t0, t1);
+
+		/* u3 = (a1+a2)*(b1+b2) - a1*b1 - a2*b2 = a1*b2 + a2*b1 */
+		fp2_subc_low(u3[0], u3[0], u1[0]);
+		fp2_subc_low(u3[0], u3[0], u2[0]);
+		fp2_subc_low(u3[1], u3[1], u1[1]);
+		fp2_subc_low(u3[1], u3[1], u2[1]);
+
+		/* c0 = ( a2*b1 + a1*b2 ) * v + a0*b0 */
+		fp2_nord_low(u4[0], u3[1]);
+		fp2_addc_low(c[0][0], u4[0], u0[0]);
+		fp2_addc_low(c[0][1], u3[0], u0[1]);
+
+
+		fp4_add(t0, a[0][0], a[0][2]);
+		fp4_add(t1, b[0][0], b[0][2]);
+		/* u4 = ( a0 + a1 ) * ( b0 + b1 ) */
+		fp4_mul_unr(u4, t0, t1);
+
+		/* u4 = ( a0 + a1 ) * ( b0 + b1 ) - a0*b0 - a1*b1 = a0*b1 + a1*b0 */
+		for (int i = 0; i < 2; i++) {
+			fp2_subc_low(u4[i], u4[i], u0[i]);
+			fp2_subc_low(u4[i], u4[i], u1[i]);
+		}
+		/* c1 = a2*b2*v + a0*b1 + a1*b0 */
+		fp2_nord_low(u3[0], u2[1]);
+		fp2_addc_low(c[0][2], u4[0], u3[0]);
+		fp2_addc_low(c[1][0], u4[1], u2[0]);
+
+
+
+		fp4_add(t0, a[0][0], a[1][1]);
+		fp4_add(t1, b[0][0], b[1][1]);
+		/* u4 = (a0+a2)*(b0+b2) */
+		fp4_mul_unr(u4, t0, t1);
+
+		/* c2 = (a0+a2)*(b0+b2) - a0*b0 - a2*b2 + a1b1 = a0b2 + a2b0 + a1b1 */
+		for (int i = 0; i < 2; i++) {
+			fp2_subc_low(u4[i], u4[i], u0[i]);
+			fp2_addc_low(u4[i],u4[i],u1[i]);
+			fp2_subc_low(c[1][1+i], u4[i], u2[i]);
+		}
+
+	} RLC_CATCH_ANY {
+		RLC_THROW(ERR_CAUGHT);
+	} RLC_FINALLY {
+		dv4_free(u0);
+		dv4_free(u1);
+		dv4_free(u2);
+		dv4_free(u3);
+		dv4_free(u4);
+		fp4_free(t0);
+		fp4_free(t1);
+	}
+}
+
+static void fp12_mul_t(fp12_t c, fp12_t a, fp12_t b) {
+	dv12_t t;
+
+	dv12_null(t);
+
+	RLC_TRY {
+		dv12_new(t);
+		fp12_mul_unr_t(t, a, b);
+		for (int i = 0; i < 3; i++) {
+			fp2_rdcn_low(c[0][i], t[0][i]);
+			fp2_rdcn_low(c[1][i], t[1][i]);
+		}
+	} RLC_CATCH_ANY {
+		RLC_THROW(ERR_CAUGHT);
+	} RLC_FINALLY {
+		dv12_free(t);
+	}
+}
+
+void fp12_mul_test(fp12_t r, const fp12_t a, const fp12_t b){
+
+	fp12_mul_lazyr(r, a, b);
+	printf("mul from fp6:\n");
+	printf("\n");
+	fp12_print(r);
+
+	fp12_mul_t(r, a, b);
+	printf("mul from fp4:\n");
+	printf("\n");
+	fp12_print(r);
+	return;
 }
 
 static void fp12_inv_t(fp12_t r, const fp12_t a)
@@ -322,7 +441,129 @@ static void fp12_inv_t(fp12_t r, const fp12_t a)
 	}
 }
 
-static void fp12_sqr_t(fp12_t r, const fp12_t a)
+void fp12_sqr_unr_t(dv12_t c, fp12_t a) {
+	fp4_t t0, t1;
+	dv4_t u0, u1, u2, u3, u4;
+
+	fp4_null(t0);
+	fp4_null(t1);
+	dv4_null(u0);
+	dv4_null(u1);
+	dv4_null(u2);
+	dv4_null(u3);
+	dv4_null(u4);
+
+	RLC_TRY {
+		fp4_new(t0);
+		fp4_new(t1);
+		dv4_new(u0);
+		dv4_new(u1);
+		dv4_new(u2);
+		dv4_new(u3);
+		dv4_new(u4);
+
+		/* a0 = (a00, a01). */
+		/* a1 = (a02, a10). */
+		/* a2 = (a11, a12). */
+
+		/* (t0,t1) = a0^2 */
+		fp2_copy(t0[0], a[0][0]);
+		fp2_copy(t0[1], a[0][1]);
+		fp4_sqr_unr(u0, t0);
+
+		/* (t2,t3) = 2 * a1 * a2 */
+		fp2_copy(t0[0], a[0][2]);
+		fp2_copy(t0[1], a[1][0]);
+		fp2_copy(t1[0], a[1][1]);
+		fp2_copy(t1[1], a[1][2]);
+		fp4_mul_unr(u1, t0, t1);
+		fp2_addc_low(u1[0], u1[0], u1[0]);
+		fp2_addc_low(u1[1], u1[1], u1[1]);
+
+		/* (t4,t5) = a2^2. */
+		fp4_sqr_unr(u2, t1);
+
+		/* c2 = a0 + a2. */
+		fp2_addm_low(t1[0], a[0][0], a[1][1]);
+		fp2_addm_low(t1[1], a[0][1], a[1][2]);
+
+		/* (t6,t7) = (a0 + a2 + a1)^2. */
+		fp2_addm_low(t0[0], t1[0], a[0][2]);
+		fp2_addm_low(t0[1], t1[1], a[1][0]);
+		fp4_sqr_unr(u3, t0);
+
+		/* c2 = (a0 + a2 - a1)^2. */
+		fp2_subm_low(t0[0], t1[0], a[0][2]);
+		fp2_subm_low(t0[1], t1[1], a[1][0]);
+		fp4_sqr_unr(u4, t0);
+
+		/* c2 = (c2 + (t6,t7))/2. */
+#ifdef RLC_FP_ROOM
+		fp2_addd_low(u4[0], u4[0], u3[0]);
+		fp2_addd_low(u4[1], u4[1], u3[1]);
+#else
+		fp2_addc_low(u4[0], u4[0], u3[0]);
+		fp2_addc_low(u4[1], u4[1], u3[1]);
+#endif
+		fp_hlvd_low(u4[0][0], u4[0][0]);
+		fp_hlvd_low(u4[0][1], u4[0][1]);
+		fp_hlvd_low(u4[1][0], u4[1][0]);
+		fp_hlvd_low(u4[1][1], u4[1][1]);
+
+		/* (t6,t7) = (t6,t7) - c2 - (t2,t3). */
+		fp2_subc_low(u3[0], u3[0], u4[0]);
+		fp2_subc_low(u3[1], u3[1], u4[1]);
+		fp2_subc_low(u3[0], u3[0], u1[0]);
+		fp2_subc_low(u3[1], u3[1], u1[1]);
+
+		/* c2 = c2 - (t0,t1) - (t4,t5). */
+		fp2_subc_low(u4[0], u4[0], u0[0]);
+		fp2_subc_low(u4[1], u4[1], u0[1]);
+		fp2_subc_low(c[1][1], u4[0], u2[0]);
+		fp2_subc_low(c[1][2], u4[1], u2[1]);
+
+		/* c1 = (t6,t7) + (t4,t5) * E. */
+		fp2_nord_low(u4[1], u2[1]);
+		fp2_addc_low(c[0][2], u3[0], u4[1]);
+		fp2_addc_low(c[1][0], u3[1], u2[0]);
+
+		/* c0 = (t0,t1) + (t2,t3) * E. */
+		fp2_nord_low(u4[1], u1[1]);
+		fp2_addc_low(c[0][0], u0[0], u4[1]);
+		fp2_addc_low(c[0][1], u0[1], u1[0]);
+	} RLC_CATCH_ANY {
+		RLC_THROW(ERR_CAUGHT);
+	} RLC_FINALLY {
+		fp4_free(t0);
+		fp4_free(t1);
+		dv4_free(u0);
+		dv4_free(u1);
+		dv4_free(u2);
+		dv4_free(u3);
+		dv4_free(u4);
+	}
+}
+
+static void fp12_sqr_t(fp12_t c, const fp12_t a) {
+	dv12_t t;
+
+	dv12_null(t);
+
+	RLC_TRY {
+		dv12_new(t);
+		fp12_sqr_unr_t(t, a);
+		for (int i = 0; i < 3; i++) {
+			fp2_rdcn_low(c[0][i], t[0][i]);
+			fp2_rdcn_low(c[1][i], t[1][i]);
+		}
+	} RLC_CATCH_ANY {
+		RLC_THROW(ERR_CAUGHT);
+	} RLC_FINALLY {
+		dv12_free(t);
+	}
+}
+
+static void fp12_sqr_t1(fp12_t r, const fp12_t a)
 {
 	fp4_t r0, r1, r2, t;
 
@@ -864,7 +1105,6 @@ static void sm9_final_exponent(fp12_t r, const fp12_t f)
 	fp12_new(t0);
 	fp12_new(t1);
 
-	
 	fp12_frobenius6(t0, f);
 	// PERFORMANCE_TEST("fp12_frobenius6",fp12_frobenius6(t0, f),1000);
 	fp12_inv_t(t1, f);
@@ -878,7 +1118,7 @@ static void sm9_final_exponent(fp12_t r, const fp12_t f)
 	sm9_final_exponent_hard_part(t0, t0);
 	// PERFORMANCE_TEST("sm9_final_exponent_hard_part",sm9_final_exponent_hard_part(t0, t0),1000);
 	fp12_copy(r, t0);
-
+	
 	fp12_free(t0);
 	fp12_free(t1);
 }
