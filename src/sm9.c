@@ -366,7 +366,66 @@ void fp12_mul_test(fp12_t r, const fp12_t a, const fp12_t b){
 	return;
 }
 
-static void fp12_inv_t(fp12_t r, const fp12_t a)
+void fp12_inv_t(fp12_t c, fp12_t a) {
+	fp4_t v0;
+	fp4_t v1;
+	fp4_t v2;
+	fp4_t t0;
+
+	fp4_null(v0);
+	fp4_null(v1);
+	fp4_null(v2);
+	fp4_null(t0);
+
+	RLC_TRY {
+		fp4_new(v0);
+		fp4_new(v1);
+		fp4_new(v2);
+		fp4_new(t0);
+
+		/* v0 = a_0^2 - E * a_1 * a_2. */
+		fp4_sqr(t0, a[0][0]);
+		fp4_mul(v0, a[0][2], a[1][1]);
+		fp4_mul_art(v2, v0);
+		fp4_sub(v0, t0, v2);
+
+		/* v1 = E * a_2^2 - a_0 * a_1. */
+		fp4_sqr(t0, a[1][1]);
+		fp4_mul_art(v2, t0);
+		fp4_mul(v1, a[0][0], a[0][2]);
+		fp4_sub(v1, v2, v1);
+
+		/* v2 = a_1^2 - a_0 * a_2. */
+		fp4_sqr(t0, a[0][2]);
+		fp4_mul(v2, a[0][0], a[1][1]);
+		fp4_sub(v2, t0, v2);
+
+		fp4_mul(t0, a[0][2], v2);
+		fp4_mul_art(c[0][2], t0);
+
+		fp4_mul(c[0][0], a[0][0], v0);
+
+		fp4_mul(t0, a[1][1], v1);
+		fp4_mul_art(c[1][1], t0);
+
+		fp4_add(t0, c[0][0], c[0][2]);
+		fp4_add(t0, t0, c[1][1]);
+		fp4_inv(t0, t0);
+
+		fp4_mul(c[0][0], v0, t0);
+		fp4_mul(c[0][2], v1, t0);
+		fp4_mul(c[1][1], v2, t0);
+	} RLC_CATCH_ANY {
+		RLC_THROW(ERR_CAUGHT);
+	} RLC_FINALLY {
+		fp4_free(v0);
+		fp4_free(v1);
+		fp4_free(v2);
+		fp4_free(t0);
+	}
+}
+
+static void fp12_inv_t1(fp12_t r, const fp12_t a)
 {
 	if (fp4_is_zero(a[1][1])) {
 		fp4_t k, t;
