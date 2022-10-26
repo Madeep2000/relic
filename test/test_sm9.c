@@ -157,6 +157,249 @@ void test_fp12_mul(){
 	fp12_free(t3);
 }
 
+int test_alot(){
+	g1_t g1;
+	ep2_t Ppub;
+	fp12_t r;
+	bn_t k;
+	bn_null(k);
+	bn_new(k);
+	g1_null(g1);
+	g1_new(g1);
+	g1_get_gen(g1);
+
+
+	ep2_null(Ppub);
+	ep2_new(Ppub);
+
+	char x0[] = "29DBA116152D1F786CE843ED24A3B573414D2177386A92DD8F14D65696EA5E32";
+	char x1[] = "9F64080B3084F733E48AFF4B41B565011CE0711C5E392CFB0AB1B6791B94C408";
+	char y0[] = "41E00A53DDA532DA1A7CE027B7A46F741006E85F5CDFF0730E75C05FB4E3216D";
+	char y1[] = "69850938ABEA0112B57329F447E3A0CBAD3E2FDB1A77F335E89E1408D0EF1C25";
+	char z0[] = "1";
+	char z1[] = "0";
+
+	fp_read_str(Ppub->x[0], x0, strlen(x0), 16);
+	fp_read_str(Ppub->x[1], x1, strlen(x1), 16);
+	fp_read_str(Ppub->y[0], y0, strlen(y0), 16);
+	fp_read_str(Ppub->y[1], y1, strlen(y1), 16);
+	fp_read_str(Ppub->z[0], z0, strlen(z0), 16);
+	fp_read_str(Ppub->z[1], z1, strlen(z1), 16);
+
+	fp12_null(r);
+	fp12_new(r);
+
+	
+
+#if 0
+	// 非退化性测试1
+	printf("TEST\n");
+	ep_rand(g1);
+	ep2_rand(Ppub);
+	sm9_init();
+	
+	sm9_pairing(r, Ppub, g1);
+	printf("in: Ppub\n");
+	ep2_print(Ppub);
+	printf("in: g1\n");
+	ep_print(g1);
+	printf("out: r\n");
+	fp12_print(r);
+#endif
+#if 0
+	// 非退化性测试2
+	printf("TEST\n");
+	ep_rand(g1);
+	ep2_set_infty(Ppub);
+	sm9_init();
+	
+	sm9_pairing(r, Ppub, g1);
+	printf("in: Ppub\n");
+	ep2_print(Ppub);
+	printf("in: g1\n");
+	ep_print(g1);
+	printf("out: r\n");
+	fp12_print(r);
+#endif
+#if 0
+	// 非退化性测试3
+	printf("TEST\n");
+	ep_set_infty(g1);
+	ep2_rand(Ppub);
+	sm9_init();
+	
+	sm9_pairing(r, Ppub, g1);
+	printf("in: Ppub\n");
+	ep2_print(Ppub);
+	printf("in: g1\n");
+	ep_print(g1);
+	printf("out: r\n");
+	fp12_print(r);
+#endif
+#if 0
+	// 双线性测试1
+	printf("TEST\n");
+
+	g1_t gtemp;
+	ep2_t Ptemp;
+	g1_null(gtemp);
+	g1_get_gen(gtemp);
+	ep2_null(Ptemp);
+	ep2_new(Ptemp);
+
+	bn_rand(k,RLC_POS,100);
+	ep_rand(g1);
+	ep2_rand(Ppub);
+
+	ep_mul_basic(gtemp,g1,k);
+	ep2_mul_basic(Ptemp,Ppub,k);
+
+	sm9_init();
+	
+	printf("in: Ppub\n");
+	ep2_print(Ppub);
+	printf("in: g1\n");
+	ep_print(g1);
+	printf("in: Ptemp\n");
+	ep2_print(Ptemp);
+	printf("in: gtemp\n");
+	ep_print(gtemp);
+	printf("out: r1\n");
+	sm9_pairing(r, Ppub, gtemp);
+	fp12_print(r);
+
+	
+	sm9_pairing(r, Ptemp, g1);
+	printf("out: r2\n");
+	fp12_print(r);
+
+	g1_free(gtemp);
+	ep2_free(Ptemp);
+#endif
+#if 0
+	// 双线性测试2
+	printf("TEST\n");
+
+	g1_t gtemp;
+	g1_null(gtemp);
+	g1_get_gen(gtemp);
+
+	bn_rand(k,RLC_POS,100);
+	ep_rand(g1);
+	ep2_rand(Ppub);
+
+	ep_mul_basic(gtemp,g1,k);
+
+	sm9_init();
+	
+	printf("in: Ppub\n");
+	ep2_print(Ppub);
+	printf("in: g1\n");
+	ep_print(g1);
+	printf("in: gtemp\n");
+	ep_print(gtemp);
+	printf("out: r1\n");
+	sm9_pairing(r, Ppub, gtemp);
+	fp12_print(r);
+	
+	sm9_pairing(r, Ppub, g1);
+	printf("out: r2\n");
+	fp12_print(r);
+	fp12_pow_t(r,r,k);
+	printf("out: r2^k\n");
+	fp12_print(r);
+
+	g1_free(gtemp);
+#endif
+#if 0
+	// 双线性测试3
+	printf("TEST\n");
+
+	ep2_t Ptemp;
+	ep2_null(Ptemp);
+	ep2_new(Ptemp);
+
+	bn_rand(k,RLC_POS,255);
+	ep2_rand(Ppub);
+	ep2_mul_basic(Ptemp,Ppub,k);
+
+	sm9_init();
+	
+	printf("in: Ppub\n");
+	ep2_print(Ppub);
+	printf("in: g1\n");
+	ep_print(g1);
+	printf("in: Ptemp\n");
+	ep2_print(Ptemp);
+	printf("out: r1\n");
+	sm9_pairing(r, Ptemp, g1);
+	fp12_print(r);
+
+	sm9_pairing(r, Ppub, g1);
+	printf("out: r2\n");
+	fp12_print(r);
+	fp12_pow_t(r,r,k);
+	printf("out: r2^k\n");
+	fp12_print(r);
+
+	ep2_free(Ptemp);
+#endif
+#if 1
+	// 双线性测试4
+	printf("TEST\n");
+	bn_t k2;
+	bn_null(k2);
+	bn_new(k2);
+
+	g1_t gtemp;
+	ep2_t Ptemp;
+	g1_null(gtemp);
+	g1_get_gen(gtemp);
+	ep2_null(Ptemp);
+	ep2_new(Ptemp);
+
+	bn_rand(k,RLC_POS,255);
+	bn_rand(k2,RLC_POS,255);
+	ep_rand(g1);
+	ep2_rand(Ppub);
+
+	ep_mul_basic(gtemp,g1,k);
+	ep2_mul_basic(Ptemp,Ppub,k2);
+
+	sm9_init();
+	
+	printf("in: Ppub\n");
+	ep2_print(Ppub);
+	printf("in: g1\n");
+	ep_print(g1);
+	printf("in: Ptemp\n");
+	ep2_print(Ptemp);
+	printf("in: gtemp\n");
+	ep_print(gtemp);
+	printf("out: r1\n");
+	sm9_pairing(r, Ptemp, gtemp);
+	fp12_print(r);
+
+	
+	sm9_pairing(r, Ppub, g1);
+	printf("out: r2\n");
+	fp12_print(r);
+	fp12_pow_t(r,r,k);
+	fp12_pow_t(r,r,k2);
+	printf("out: r2^{k1*k2}\n");
+	fp12_print(r);
+
+	g1_free(gtemp);
+	ep2_free(Ptemp);
+	bn_free(k2);
+#endif
+	sm9_clean();
+	g1_free(g1);
+	ep2_free(Ppub);
+	fp12_free(r);
+	bn_free(k);
+}
+
 
 int main(void) {
 	if (core_init() != RLC_OK) {
@@ -172,9 +415,10 @@ int main(void) {
 
 	pc_param_print();
 
-	test_sm9_pairing();
-	// test_fp12_mul();
-	// test
+	//test_sm9_pairing();
+	for(int i = 0 ; i < 1 ; i++){
+		test_alot();
+	}
 	core_clean();
 	return 0;
 }

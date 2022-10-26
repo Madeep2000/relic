@@ -693,6 +693,46 @@ static void fp12_pow(fp12_t r, const fp12_t a, const sm9_bn_t k)
 	fp12_free(t);
 }
 
+void fp12_pow_t(fp12_t c, fp12_t a, bn_t b) {
+	fp12_t t;
+
+	if (bn_is_zero(b)) {
+		fp12_set_dig(c, 1);
+		return;
+	}
+
+	fp12_null(t);
+
+	RLC_TRY {
+		fp12_new(t);
+
+		if (fp12_test_cyc(a)) {
+			fp12_exp_cyc(c, a, b);
+		} else {
+			fp12_copy(t, a);
+
+			for (int i = bn_bits(b) - 2; i >= 0; i--) {
+				fp12_sqr_t(t, t);
+				if (bn_get_bit(b, i)) {
+					fp12_mul_t(t, t, a);
+				}
+			}
+
+			if (bn_sign(b) == RLC_NEG) {
+				fp12_inv_t(c, t);
+			} else {
+				fp12_copy(c, t);
+			}
+		}
+	}
+	RLC_CATCH_ANY {
+		RLC_THROW(ERR_CAUGHT);
+	}
+	RLC_FINALLY {
+		fp12_free(t);
+	}
+}
+
 static void fp12_frobenius(fp12_t r, const fp12_t x)
 {
 
