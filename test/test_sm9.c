@@ -20,8 +20,8 @@ void test_sm9_pairing(){
 
 	g1_null(g1);
 	g1_new(g1);
-	g1_get_gen(g1);
 
+	g1_get_gen(g1);
 
 	ep2_null(Ppub);
 	ep2_new(Ppub);
@@ -45,7 +45,7 @@ void test_sm9_pairing(){
 
 	sm9_init();
 
-#if 1
+#if 0
 	// 测试正确性
 	sm9_pairing(r, Ppub, g1);
 	printf("in: Ppub\n");
@@ -74,10 +74,50 @@ void test_sm9_pairing(){
 // 	PERFORMANCE_TEST("pp_map_weilp_k12(r, g1, Ppub)", pp_map_weilp_k12(r, g1, Ppub), 1000);
 // 	PERFORMANCE_TEST("pp_map_oatep_k12(r, g1, Ppub)", pp_map_oatep_k12(r, g1, Ppub), 1000);
 // #endif
-
 #if 1
-	// 测试性能
+	// 测试单线程性能
+  
 	// PERFORMANCE_TEST("pairing", sm9_pairing(r, Ppub, g1), 1000);
+
+  // 测试多线程性能
+	pthread_attr_t attr; // 定义线程属性
+
+	size_t count=1000;
+	fp12_t r_arr[count];
+	g1_t g1_arr[count];
+	ep2_t Ppub_arr[count];
+
+	for (size_t i = 0; i < count; i++)
+	{
+		fp12_null(r_arr[i]);
+		fp12_new(r_arr[i]);
+		g1_null(g1_arr[i]);
+		g1_new(g1_arr[i]);
+		ep2_null(Ppub_arr[i]);
+		ep2_new(Ppub_arr[i]);
+		g1_rand(g1_arr[i]);
+		ep2_rand(Ppub_arr[i]);
+	}
+	
+	double begin, end;
+  begin = clock();
+  for (size_t i = 0; i < count; i++)
+  {
+    sm9_pairing(r_arr[i], Ppub_arr[i], g1_arr[i]);
+  }
+  end = clock();
+  printf("测试%d次的时间为%f秒，每次运行时间%f秒，一秒运行次数%f", count, (end-begin)/CLOCKS_PER_SEC, (end-begin)/CLOCKS_PER_SEC/count, 1/((end-begin)/CLOCKS_PER_SEC/count));
+	// 清理空间
+	for (size_t i = 0; i < count; i++)
+	{
+		fp12_free(r_arr[i]);
+		g1_free(g1_arr[i]);
+		ep2_free(Ppub_arr[i]);
+	}
+#endif
+
+#if 0
+  // 测试多线程性能
 	pthread_attr_t attr; // 定义线程属性
 
 	size_t count=1000;
