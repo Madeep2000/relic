@@ -69,7 +69,7 @@ static void fp2_mul_fp(fp2_t r, const fp2_t a, const fp_t k)
 static void fp2_conjugate(fp2_t r, const fp2_t a)
 {
 	fp_copy(r[0], a[0]);
-	fp_neg (r[1], a[1]);
+	fp_neg(r[1], a[1]);
 }
 
 static void fp2_mul_u(fp2_t r, const fp2_t a, const fp2_t b)
@@ -196,13 +196,42 @@ static void fp4_mul_fp(fp4_t r, const fp4_t a, const fp_t k)
 	fp2_mul_fp(r[1], a[1], k);
 }
 
+/* 
+void sm9_fp2_u(sm9_fp2_t r, const sm9_fp2_t a){
+	sm9_fp_copy(r[1], a[0]);
+	sm9_fp_dbl(r[0], a[1]);
+	sm9_fp_neg(r[0], r[0]);
+}
+即fp2_mul_nor(fp2_t c,fp2_t a)
+*/
+
+/* r = a*v, 即 r = a0v + a1*u  
+void sm9_fp4_v(sm9_fp4_t r, const sm9_fp4_t a){
+	sm9_fp2_copy(r[1], a[0]);
+	sm9_fp2_u(r[0], a[1]);
+}
+即 fp4_mul_art(fp4_t r,fp4_t a)
+*/
+
+/* (a0+a1*v)*b*v = a1*b*u + a0*b*v */
+void fp4_mul_fp2_v(fp4_t r, const fp4_t a, const fp2_t b){
+	fp2_mul(r[0], a[1], b);
+	fp2_mul_nor(r[0],r[0]);
+	fp2_mul(r[1], a[0], b);
+}
+
+void fp4_mul_fp2(fp4_t r, const fp4_t a, const fp2_t b){
+	fp2_mul(r[0], a[0], b);
+	fp2_mul(r[1], a[1], b);
+}
+
 static void fp4_conjugate(fp4_t r, const fp4_t a)
 {
 	fp2_copy(r[0], a[0]);
 	fp2_neg(r[1], a[1]);
 }
 
-static void fp12_mul_t1(fp12_t r, const fp12_t a, const fp12_t b)
+void fp12_mul_t1(fp12_t r, const fp12_t a, const fp12_t b)
 {
 	fp4_t r0, r1, r2, t;
 
@@ -244,7 +273,7 @@ static void fp12_mul_t1(fp12_t r, const fp12_t a, const fp12_t b)
 	fp4_free(t);
 }
 
-void fp12_mul_unr_t(dv12_t c, fp12_t a, fp12_t b) {
+static void fp12_mul_unr_t(dv12_t c, fp12_t a, fp12_t b) {
 	dv4_t u0, u1, u2, u3, u4;
 	fp4_t t0, t1;
 
@@ -333,7 +362,7 @@ void fp12_mul_unr_t(dv12_t c, fp12_t a, fp12_t b) {
 	}
 }
 
-static void fp12_mul_t(fp12_t c, fp12_t a, fp12_t b) {
+void fp12_mul_t(fp12_t c, fp12_t a, fp12_t b) {
 	dv12_t t;
 
 	dv12_null(t);
@@ -352,18 +381,51 @@ static void fp12_mul_t(fp12_t c, fp12_t a, fp12_t b) {
 	}
 }
 
-void fp12_mul_test(fp12_t r, const fp12_t a, const fp12_t b){
 
-	fp12_mul_lazyr(r, a, b);
-	printf("mul from fp6:\n");
-	printf("\n");
-	fp12_print(r);
+// g is a sparse fp12_t, g = g0 + g2'w^2, g0 = g0' + g3'w^3，g0',g1',g3'都定义在fp2
+void fp12_mul_sparse(fp12_t h, const fp12_t f, const fp12_t g){
+	fp4_t t0, t1, u0, u1, u2, t, h0, h1, h2;
 
-	fp12_mul_t(r, a, b);
-	printf("mul from fp4:\n");
-	printf("\n");
-	fp12_print(r);
-	return;
+	// 1. t0 = f0*g0
+	fp4_mul(t0, f[0][0], g[0][0]);
+
+	// 2. t1 = Fp4SparseMul(f2, g2')
+	fp4_mul_fp2(t1, f[1][1], g[1][1]);
+
+	// 3. u0 = Fp4SparseMul(f1+f2, g2')
+	fp4_add(u0, f[0][2], f[1][1]);
+	fp4_mul_fp2(u0, u0, g[1][1]);
+
+	// 4. u1 = (f0+f2)*(g0+g2')
+	fp4_copy(t, g[0][0]);
+	fp2_add(t[0], t[0], g[1][1]);  // t = (g0+g2')
+	fp4_add(u1, f[0][0], f[1][1]);  // u1 = (f0+f2)
+	fp4_mul(u1, u1, t);
+
+	// 5. u2 = (f0+f1)*g0
+	fp4_add(u2, f[0][0], f[0][2]);
+	fp4_mul(u2, u2, g[0][0]);
+
+	// 6. h0 = t0 + (u0 - t1)v
+	fp4_sub(t, u0, t1);
+	fp4_mul_art(h[0][0], t);  // h0 = (u0 - t1)v
+	fp4_add(h[0][0], t0, h[0][0]);
+
+	// 7. h1 = u2 - t0 + t1v
+	fp4_mul_art(h[0][2], t1);  // h1 = t1v
+	fp4_add(h[0][2], h[0][2], u2);
+	fp4_sub(h[0][2], h[0][2], t0);
+
+	// 8. h2 = u1 - t0 - t1
+	fp4_sub(h[1][1], u1, t0);
+	fp4_sub(h[1][1], h[1][1], t1);
+}
+
+// r = (a0 + a1*w + a2*w^2)*b3'w^3，其中b3'是fp2上的元素，也就是b0中的高位fp2，即b3'*w^3 = b3'*v
+void fp12_mul_sparse2(fp12_t r, fp12_t a, fp12_t b){
+	fp4_mul_fp2_v(r[0][0], a[0][0], b[0][1]);
+	fp4_mul_fp2_v(r[0][2], a[0][2], b[0][1]);
+	fp4_mul_fp2_v(r[1][1], a[1][1], b[0][1]);
 }
 
 void fp12_inv_t(fp12_t c, fp12_t a) {
@@ -500,7 +562,8 @@ static void fp12_inv_t1(fp12_t r, const fp12_t a)
 	}
 }
 
-void fp12_sqr_unr_t(dv12_t c, fp12_t a) {
+
+static void fp12_sqr_unr_t(dv12_t c, fp12_t a) {
 	fp4_t t0, t1;
 	dv4_t u0, u1, u2, u3, u4;
 
@@ -603,7 +666,7 @@ void fp12_sqr_unr_t(dv12_t c, fp12_t a) {
 	}
 }
 
-static void fp12_sqr_t(fp12_t c, const fp12_t a) {
+void fp12_sqr_t(fp12_t c, const fp12_t a) {
 	dv12_t t;
 
 	dv12_null(t);
@@ -1075,7 +1138,7 @@ static void sm9_eval_g_line(fp12_t num, fp12_t den, ep2_t T, ep2_t P, ep_t Q){
 	bn_free(three);
 }
 
-static void sm9_eval_g_tangent(fp12_t num, fp12_t den, ep2_t P, ep_t Q){
+void sm9_eval_g_tangent(fp12_t num, fp12_t den, ep2_t P, ep_t Q){
 	// fp_t *x, *y;
 	// x = Q->x;
 	// y = Q->y;
@@ -1263,7 +1326,7 @@ void sm9_pairing(fp12_t r, const ep2_t Q, const ep_t P){
 	fp12_new(g_num);
 	fp12_new(g_den);
 	fp12_new(fp12_tmp);
-	
+
 	// b)
 	ep2_copy(T, Q);
 	fp12_set_dig(f_num, 1);
@@ -1277,15 +1340,17 @@ void sm9_pairing(fp12_t r, const ep2_t Q, const ep_t P){
 
 		sm9_eval_g_tangent(g_num, g_den, T, P);
 		// PERFORMANCE_TEST("sm9_eval_g_tangent",sm9_eval_g_tangent(g_num, g_den, T, P),10000);
+
 		fp12_mul_t(f_num, f_num, g_num);
 		fp12_mul_t(f_den, f_den, g_den);
 
 		ep2_dbl_projc(T, T);
-
+		// c.2)
 		if (abits[i] == '1')
 		{
 			sm9_eval_g_line(g_num, g_den, T, Q, P);
 			// PERFORMANCE_TEST("sm9_eval_g_line",sm9_eval_g_line(g_num, g_den, T, Q, P),10000);
+
 			fp12_mul_t(f_num, f_num, g_num);
 			fp12_mul_t(f_den, f_den, g_den);
 

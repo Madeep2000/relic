@@ -4,6 +4,151 @@
 #include <pthread.h>
 #include <omp.h>
 
+/***************性能测试代码*******************/
+#include <sys/times.h>
+#include <unistd.h>
+#include <signal.h>
+#include <stdio.h>
+
+static int run = 0;
+// static int usertime = 1;
+
+#define TM_START        0
+#define TM_STOP         1
+
+#define START        0
+#define STOP         1
+
+static void alarmed(int sig)
+{
+    signal(SIGALRM, alarmed); 
+    run = 0;
+}
+
+double app_tminterval(int stop)
+{
+    double ret = 0;
+    struct tms rus;
+    clock_t now = times(&rus);
+    static clock_t tmstart;
+
+    // if (usertime)
+    //     now = rus.tms_utime;
+
+    if (stop == TM_START) {
+        tmstart = now;
+    } else {
+        long int tck = sysconf(_SC_CLK_TCK);
+        ret = (now - tmstart) / (double)tck;
+    }
+    return ret;
+}
+
+// s为STOP时，返回间隔时间
+static double Time_F(int s)
+{
+    double ret = app_tminterval(s);  // 返回
+    if (s == STOP)
+        alarm(0);  // 停止闹钟
+    return ret;
+}
+
+// GmSSL'sfp12_mul,Relic'sfp12_mul_t和fp12_sparse性能比较
+void performance_compare_num(const fp12_t a,const fp12_t b){
+	fp12_t r;
+    int count;
+    int sec = 1;
+    double d = 0.0;
+
+    // 注册计时器
+    signal(SIGALRM, alarmed); 
+
+	// fp12_mul_t1
+    alarm(sec);
+    run = 1;
+    Time_F(START);
+    for (count = 0; run && count < 0x7fffffff; count++)
+    {
+        fp12_mul_t1(r, a, b);
+    }
+    d = Time_F(STOP);
+    printf("GmSSL's fp12_mul: run %d times in %.2fs\n", count, d);
+
+    // fp12_mul_t
+    alarm(sec);
+    run = 1;
+    Time_F(START);
+    for (count = 0; run && count < 0x7fffffff; count++)
+    {
+        fp12_mul_t(r, a, b);
+    }
+    d = Time_F(STOP);
+    printf("Relic's fp12_mul: run %d times in %.2fs\n", count, d);
+
+    // fp12_mul_sparse
+    alarm(sec);
+    run = 1;
+    Time_F(START);
+    for (count = 0; run && count < 0x7fffffff; count++)
+    {
+        fp12_mul_sparse(r, a, b);
+    }
+    d = Time_F(STOP);
+    printf("fp12_mul_sparse : run %d times in %.2fs\n", count, d);
+
+    return 0;
+
+    return 0;
+}
+
+// GmSSL's fp12_mul,Relic's fp12_mul_t和fp12_sparse2性能比较
+static void performance_compare_den(const fp12_t a,const fp12_t b){
+	fp12_t r;
+    int count;
+    int sec = 1;
+    double d = 0.0;
+
+    // 注册计时器
+    signal(SIGALRM, alarmed);
+
+	
+    // fp12_mul_t1
+    alarm(sec);
+    run = 1;
+    Time_F(START);
+    for (count = 0; run && count < 0x7fffffff; count++)
+    {
+        fp12_mul_t1(r, a, b);
+    }
+    d = Time_F(STOP);
+    printf("GmSSL's fp12_mul: run %d times in %.2fs\n", count, d);
+
+    // fp12_mul_t
+    alarm(sec);
+    run = 1;
+    Time_F(START);
+    for (count = 0; run && count < 0x7fffffff; count++)
+    {
+        fp12_mul_t(r, a, b);
+    }
+    d = Time_F(STOP);
+    printf("Relic's fp12_mul: run %d times in %.2fs\n", count, d);
+
+    // fp12_mul_sparse2
+    alarm(sec);
+    run = 1;
+    Time_F(START);
+    for (count = 0; run && count < 0x7fffffff; count++)
+    {
+        fp12_mul_sparse2(r, a, b);
+    }
+    d = Time_F(STOP);
+    printf("fp12_mul_sparse2: run %d times in %.2fs\n", count, d);
+
+    return 0;
+}
+/***************性能测试代码 end *******************/
+
 void sm9_pairing_omp_t(fp12_t r_arr[], const ep2_t Q_arr[], const ep_t P_arr[], const size_t arr_size, const size_t threads_num){
 	omp_set_num_threads(threads_num);	
 	#pragma omp parallel for
@@ -44,6 +189,7 @@ void test_sm9_pairing(){
 	fp12_new(r);
 
 	sm9_init();
+
 
 #if 1
 	// 测试正确性
@@ -129,38 +275,11 @@ void test_sm9_pairing(){
 	fp12_free(r);
 }
 
-void test_fp12_mul(){
-	fp12_t t1, t2, t3;
 
-	fp12_null(t1);
-	fp12_null(t2);
-	fp12_null(t3);
-
-	fp12_new(t1);
-	fp12_new(t2);
-	fp12_new(t3);
-
-	fp12_rand(t1);
-	fp12_rand(t2);
-
-	printf("1:\n");
-	fp12_mul_lazyr(t3, t1, t2);
-	fp12_print(t3);
-
-	printf("2:\n");
-	fp12_mul(t3, t1, t2);
-	fp12_print(t3);
-
-
-	fp12_free(t1);
-	fp12_free(t2);
-	fp12_free(t3);
-}
-
-int test_alot(){
+void test_a_lot(){
 	g1_t g1;
 	ep2_t Ppub;
-	fp12_t r;
+	fp12_t r,t,f_num,g_num,f_den,g_den,temp;
 	bn_t k;
 	bn_null(k);
 	bn_new(k);
@@ -188,8 +307,20 @@ int test_alot(){
 
 	fp12_null(r);
 	fp12_new(r);
+	fp12_null(f_num);
+	fp12_new(f_num);	
+	fp12_null(g_num);
+	fp12_new(g_num);
+	fp12_null(f_den);
+	fp12_new(f_den);	
+	fp12_null(g_den);
+	fp12_new(g_den);	
+	fp12_null(t);
+	fp12_new(t);
+	fp12_null(temp);
+	fp12_new(temp);
 
-	
+	sm9_init();
 
 #if 0
 	// 非退化性测试1
@@ -344,7 +475,7 @@ int test_alot(){
 
 	ep2_free(Ptemp);
 #endif
-#if 1
+#if 0
 	// 双线性测试4
 	printf("TEST\n");
 	bn_t k2;
@@ -393,13 +524,60 @@ int test_alot(){
 	ep2_free(Ptemp);
 	bn_free(k2);
 #endif
+#if 0
+	/* GmSSL、relic乘法正确性测试与性能测试*/
+#endif
+#if 1
+	/* 稀疏乘法正确性测试与性能测试 ，分开测有点麻烦，所以一起测了*/
+	fp12_set_dig(f_num, 1);
+	fp12_set_dig(f_den, 1);
+	fp12_sqr_t(f_num, f_num);
+	fp12_sqr_t(f_den, f_den);
+
+	sm9_eval_g_tangent(g_num, g_den, Ppub, g1);
+
+	printf("--------Mul Sparse Correctness Test--------\n");
+	fp12_mul_t1(temp,f_num,g_num);
+	fp12_mul_t(r, f_num, g_num);
+	fp12_mul_sparse(t, f_num, g_num);  
+	
+	if( fp12_cmp(temp,r) == 0 && fp12_cmp(r, t) == 0 ){
+		printf("Mul Spares equa\n");
+	}else{
+		printf("Mul Spares1 no equa\n");
+	}
+
+	fp12_mul_t1(temp,f_den,g_den);
+	fp12_mul_t(r, f_den, g_den);
+	fp12_mul_sparse2(t, f_den, g_den);
+	if( fp12_cmp(temp,r) == 0 && fp12_cmp(r, t) == 0 ){
+		printf("Mul Spares2 equa\n");
+	}else{
+		printf("Mul Spares2 no equa\n");
+	}
+	printf("--------Mul Sparse Correctness Test END--------\n\n");
+
+	printf("--------Mul Sparse Profromence Test--------\n");
+	performance_compare_num(f_num, g_num);
+	printf("\n");
+	performance_compare_den(f_den, g_den);
+	printf("--------Mul Sparse Profromence Test END--------\n\n");
+#endif
+
 	sm9_clean();
 	g1_free(g1);
 	ep2_free(Ppub);
 	fp12_free(r);
+	fp12_free(t);
+	fp12_free(f_num);
+	fp12_free(g_num);
+	fp12_free(f_den);
+	fp12_free(g_den);
+	fp12_free(temp);
 	bn_free(k);
-}
 
+	return;
+}
 
 int main(void) {
 	if (core_init() != RLC_OK) {
@@ -416,9 +594,8 @@ int main(void) {
 	pc_param_print();
 
 	//test_sm9_pairing();
-	for(int i = 0 ; i < 1 ; i++){
-		test_alot();
-	}
+	test_a_lot();
 	core_clean();
+
 	return 0;
 }
