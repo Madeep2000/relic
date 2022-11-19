@@ -1698,3 +1698,228 @@ void sm9_pairing_omp(fp12_t r_arr[], const ep2_t Q_arr[], const ep_t P_arr[], co
 		}
 	}
 }
+
+void sm9_pairing_function_test(fp12_t r, const ep2_t Q, const ep_t P)
+{
+	// a)
+	const char *abits = "00100000000000000000000000000000000000010000101011101100100111110";
+	// const char *abits = "1";
+
+	fp12_t f, g, f_num, f_den, g_num, g_den, fp12_tmp;
+	ep2_t T, Q1, Q2, ep2_tmp, ep2_tmp2;
+	ep_t _p;
+	bn_t n;
+
+	// null
+	ep_null(_p);
+	bn_null(n);
+	ep2_null(T);
+	ep2_null(Q1);
+	ep2_null(Q2);
+	ep2_null(ep2_tmp);
+	ep2_null(ep2_tmp2);
+	fp12_null(f);
+	fp12_null(g);
+	fp12_null(f_num);
+	fp12_null(f_den);
+	fp12_null(g_num);
+	fp12_null(g_den);
+	fp12_null(fp12_tmp);
+
+	ep_new(_p);
+	bn_new(n);
+	ep2_new(T);
+	ep2_new(Q1);
+	ep2_new(Q2);
+	ep2_new(ep2_tmp);
+	ep2_new(ep2_tmp2);
+	fp12_new(f);
+	fp12_new(g);
+	fp12_new(f_num);
+	fp12_new(f_den);
+	fp12_new(g_num);
+	fp12_new(g_den);
+	fp12_new(fp12_tmp);
+
+	// b)
+	ep2_copy(T, Q);
+	fp12_set_dig(f_num, 1);
+	fp12_set_dig(f_den, 1);
+
+	PERFORMANCE_TEST_NEW("SM9 square ", fp12_sqr_t(f_num, f_den));
+	// fp12_mul_t(f_num, f_num, g_num);
+	PERFORMANCE_TEST_NEW("SM9 multiplication ",fp12_mul_t(f_num, f_num, g_num) );
+
+	PERFORMANCE_TEST_NEW("ep2_dbl_projc  ",ep2_dbl_projc(T, T) );
+	PERFORMANCE_TEST_NEW("SM9 evaluation of g_line ",sm9_eval_g_line(g_num, g_den, T, Q, P) );
+	PERFORMANCE_TEST_NEW("SM9 evaluation of g_tangent ",sm9_eval_g_tangent(g_num, g_den, T, P));
+	PERFORMANCE_TEST_NEW("SM9 add full ",ep2_add_full(T, T, Q1));
+	PERFORMANCE_TEST_NEW("SM9 final exponentiation ",sm9_final_exponent(r, r));
+	ep_free(_p);
+	bn_free(n);
+	ep2_free(T);
+	ep2_free(Q1);
+	ep2_free(Q2);
+	ep2_free(ep2_tmp);
+	ep2_free(ep2_tmp2);
+	fp12_free(f);
+	fp12_free(g);
+	fp12_free(f_num);
+	fp12_free(f_den);
+	fp12_free(g_num);
+	fp12_free(g_den);
+	fp12_free(fp12_tmp);
+
+	return 0;
+}
+
+
+void sm9_TEST(fp12_t r, const ep2_t Q, const ep_t P){
+	PERFORMANCE_TEST_NEW("SM9 RELIC Pairing ",sm9_pairing(r,Q,P));
+
+
+}
+
+
+void sm9_pairing_steps_test(fp12_t r, const ep2_t Q, const ep_t P)
+{
+	// a)
+	const char *abits = "00100000000000000000000000000000000000010000101011101100100111110";
+	// const char *abits = "1";
+
+	fp12_t f, g, f_num, f_den, g_num, g_den, fp12_tmp;
+	ep2_t T, Q1, Q2, ep2_tmp, ep2_tmp2;
+	ep_t _p;
+	bn_t n;
+
+	// null
+	ep_null(_p);
+	bn_null(n);
+	ep2_null(T);
+	ep2_null(Q1);
+	ep2_null(Q2);
+	ep2_null(ep2_tmp);
+	ep2_null(ep2_tmp2);
+	fp12_null(f);
+	fp12_null(g);
+	fp12_null(f_num);
+	fp12_null(f_den);
+	fp12_null(g_num);
+	fp12_null(g_den);
+	fp12_null(fp12_tmp);
+
+	ep_new(_p);
+	bn_new(n);
+	ep2_new(T);
+	ep2_new(Q1);
+	ep2_new(Q2);
+	ep2_new(ep2_tmp);
+	ep2_new(ep2_tmp2);
+	fp12_new(f);
+	fp12_new(g);
+	fp12_new(f_num);
+	fp12_new(f_den);
+	fp12_new(g_num);
+	fp12_new(g_den);
+	fp12_new(fp12_tmp);
+
+	int  count = 0;
+	int second = 3;
+	double d=0.0;
+	signal(SIGALRM,alarmed_t);
+	alarm(second);
+	run_t = 1;
+	TIME_F(START);
+	for(count=0;run_t&&count<0x7fffffff;count++){
+		
+	// b)
+	ep2_copy(T, Q);
+	fp12_set_dig(f_num, 1);
+	fp12_set_dig(f_den, 1);
+
+
+
+
+	for (size_t i = 0; i < strlen(abits); i++)
+	{
+		// c)
+		fp12_sqr_t(f_num, f_num);
+		fp12_sqr_t(f_den, f_den);
+
+		sm9_eval_g_tangent(g_num, g_den, T, P);
+		// PERFORMANCE_TEST_NEW("sm9_eval_g_tangent",sm9_eval_g_tangent(g_num, g_den, T, P));
+
+		fp12_mul_t(f_num, f_num, g_num);
+		fp12_mul_t(f_den, f_den, g_den);
+
+		ep2_dbl_projc(T, T);
+		// c.2)
+		if (abits[i] == '1')
+		{
+			sm9_eval_g_line(g_num, g_den, T, Q, P);
+			// PERFORMANCE_TEST("sm9_eval_g_line",sm9_eval_g_line(g_num, g_den, T, Q, P),10000);
+
+			fp12_mul_t(f_num, f_num, g_num);
+			fp12_mul_t(f_den, f_den, g_den);
+
+			ep2_add_full(T, T, Q); // T = T + Q
+		}
+	}
+	// d)
+	ep2_pi1(Q1, Q); // Q1 = pi_q(Q)
+	ep2_pi2(Q2, Q); // Q2 = pi_{q^2}(Q), Q2 = -Q2
+
+	// e)
+	sm9_eval_g_line(g_num, g_den, T, Q1, P); // g = g_{T,Q1}(P)
+	fp12_mul_t(f_num, f_num, g_num);		 // f = f * g = f * g_{T,Q1}(P)
+	fp12_mul_t(f_den, f_den, g_den);
+	ep2_add_full(T, T, Q1); // T = T + Q1
+
+	// f)
+	sm9_eval_g_line(g_num, g_den, T, Q2, P); // g = g_{T,-Q2}(P)
+	fp12_mul_t(f_num, f_num, g_num);		 // f = f * g = f * g_{T,-Q2}(P)
+	fp12_mul_t(f_den, f_den, g_den);
+	ep2_add_full(T, T, Q2); // T = T - Q2
+
+	// g)
+	fp12_inv_t(f_den, f_den); // f_den = f_den^{-1}
+
+	fp12_mul_t(r, f_num, f_den); // r = f_num*f_den = f
+
+
+
+	}
+
+
+	d=TIME_F(STOP);
+	printf("SM9 RELIC Miller part \n\t\t\t run %d times in %.2fs \n",count/second,d/second);
+
+	alarm(second);
+	run_t = 1;
+	d=0.0;
+	TIME_F(START);
+	for(count=0;run_t&&count<0x7fffffff;count++){
+		
+		sm9_final_exponent(r, r); // r = f^{(q^12-1)/r'}
+		// PERFORMANCE_TEST("sm9_final_exponent", sm9_final_exponent(r, r), 1000);
+	}
+	d = TIME_F(STOP);
+	printf("SM9 RELIC Final Exp part \n\t\t\t run %d times in %.2fs \n",count/second,d/second);
+
+	ep_free(_p);
+	bn_free(n);
+	ep2_free(T);
+	ep2_free(Q1);
+	ep2_free(Q2);
+	ep2_free(ep2_tmp);
+	ep2_free(ep2_tmp2);
+	fp12_free(f);
+	fp12_free(g);
+	fp12_free(f_num);
+	fp12_free(f_den);
+	fp12_free(g_num);
+	fp12_free(g_den);
+	fp12_free(fp12_tmp);
+
+	return 0;
+}
