@@ -428,7 +428,7 @@ void fp12_mul_sparse2(fp12_t r, fp12_t a, fp12_t b){
 	fp4_mul_fp2_v(r[1][1], a[1][1], b[0][1]);
 }
 
-void fp12_inv_t(fp12_t c, fp12_t a) {
+void fp12_inv_t2(fp12_t c, fp12_t a) {
 	fp4_t v0;
 	fp4_t v1;
 	fp4_t v2;
@@ -462,14 +462,12 @@ void fp12_inv_t(fp12_t c, fp12_t a) {
 		fp4_mul(v2, a[0][0], a[1][1]);
 		fp4_sub(v2, t0, v2);
 
+		/* t0 = [a1(a1^2-a0a2)v+a0(a0^2-a1a2v)+a2(a2^2v-a1a2)]^-1*/
 		fp4_mul(t0, a[0][2], v2);
 		fp4_mul_art(c[0][2], t0);
-
 		fp4_mul(c[0][0], a[0][0], v0);
-
 		fp4_mul(t0, a[1][1], v1);
 		fp4_mul_art(c[1][1], t0);
-
 		fp4_add(t0, c[0][0], c[0][2]);
 		fp4_add(t0, t0, c[1][1]);
 		fp4_inv(t0, t0);
@@ -485,6 +483,93 @@ void fp12_inv_t(fp12_t c, fp12_t a) {
 		fp4_free(v2);
 		fp4_free(t0);
 	}
+}
+
+void fp12_inv_t(fp12_t r, fp12_t a){
+	RLC_TRY {
+	if (fp4_is_zero(a[1][1])) {
+		fp4_t k, t;
+
+		fp4_null(k);
+		fp4_null(t);
+
+		fp4_new(k);
+		fp4_new(t);
+
+		fp4_sqr(k, a[0][0]);
+		fp4_mul(k, k, a[0][0]);
+		fp4_sqr(t, a[0][2]);
+		fp4_mul_art(t,t);
+		fp4_mul(t, t, a[0][2]);
+		fp4_add(k, k, t);
+		fp4_inv(k, k);
+
+		fp4_sqr(r[1][1], a[0][2]);
+		fp4_mul(r[1][1], r[1][1], k);
+
+		fp4_mul(r[0][2], a[0][0], a[0][2]);
+		fp4_mul(r[0][2], r[0][2], k);
+		fp4_neg(r[0][2], r[0][2]);
+
+		fp4_sqr(r[0][0], a[0][0]);
+		fp4_mul(r[0][0], r[0][0], k);
+
+		fp4_free(k);
+		fp4_free(t);
+	} else {
+		fp4_t t0, t1, t2, t3;
+
+		fp4_null(t0);
+		fp4_null(t1);
+		fp4_null(t2);
+		fp4_null(t3);
+
+		fp4_new(t0);
+		fp4_new(t1);
+		fp4_new(t2);
+		fp4_new(t3);
+
+		fp4_sqr(t0, a[0][2]);
+		fp4_mul(t1, a[0][0], a[1][1]);
+		fp4_sub(t0, t0, t1);
+
+		fp4_mul(t1, a[0][0], a[0][2]);
+		fp4_sqr(t2, a[1][1]);
+		fp4_mul_art(t2,t2);
+		fp4_sub(t1, t1, t2);
+
+		fp4_sqr(t2, a[0][0]);
+		fp4_mul(t3, a[0][2], a[1][1]);
+		fp4_mul_art(t3,t3);
+		fp4_sub(t2, t2, t3);
+
+		fp4_sqr(t3, t1);
+		fp4_mul(r[0][0], t0, t2);
+		fp4_sub(t3, t3, r[0][0]);
+		fp4_inv(t3, t3);
+		fp4_mul(t3, a[1][1], t3);
+
+		fp4_mul(r[0][0], t2, t3);
+
+		fp4_mul(r[0][2], t1, t3);
+		fp4_neg(r[0][2], r[0][2]);
+
+		fp4_mul(r[1][1], t0, t3);
+	
+		fp4_free(t0);
+		fp4_free(t1);
+		fp4_free(t2);
+		fp4_free(t3);
+	}
+	} RLC_CATCH_ANY {
+		RLC_THROW(ERR_CAUGHT);
+	} RLC_FINALLY {
+		fp4_free(v0);
+		fp4_free(v1);
+		fp4_free(v2);
+		fp4_free(t0);
+	}
+
 }
 
 static void fp12_inv_t1(fp12_t r, const fp12_t a)
@@ -761,7 +846,7 @@ void fp12_pow_t(fp12_t c, fp12_t a, bn_t b) {
 
 	if (bn_is_zero(b)) {
 		fp12_set_dig(c, 1);
-		return;
+		return ;
 	}
 
 	fp12_null(t);
@@ -972,8 +1057,8 @@ static void ep2_pi2(ep2_t R, const ep2_t P)
 
 	fp_free(c);
 }
-
-static void ep2_add_full(ep2_t R, ep2_t P, ep2_t Q)
+/* 即ep2_add */
+void ep2_add_full(ep2_t R, ep2_t P, ep2_t Q)
 {
 	const fp_t *X1 = P->x;
 	const fp_t *Y1 = P->y;
@@ -1003,11 +1088,11 @@ static void ep2_add_full(ep2_t R, ep2_t P, ep2_t Q)
 
 	if (ep2_is_infty(Q)) {
 		ep2_copy(R, P);
-		return;
+		return ;
 	}
 	if (ep2_is_infty(P)) {
 		ep2_copy(R, Q);
-		return;
+		return ;
 	}
 
 	fp2_sqr(T1, Z1);
@@ -1056,6 +1141,85 @@ static void ep2_add_full(ep2_t R, ep2_t P, ep2_t Q)
 	fp2_free(T6);
 	fp2_free(T7);
 	fp2_free(T8);
+}
+
+/* 特殊加法 当Q.Z =1时适用 */
+void ep2_add_t(ep2_t R, ep2_t P, ep2_t Q){
+	
+	const fp_t *X1 = P->x;
+	const fp_t *Y1 = P->y;
+	const fp_t *Z1 = P->z;
+	const fp_t *X2 = Q->x;
+	const fp_t *Y2 = Q->y;
+	fp2_t T1, T2, T3, T4, X3,Y3,Z3;
+
+	fp2_null(T1);
+	fp2_null(T2);
+	fp2_null(T3);
+	fp2_null(T4);
+	fp2_null(X3);
+	fp2_null(Y3);
+	fp2_null(Z3);
+
+	fp2_new(T1);
+	fp2_new(T2);
+	fp2_new(T3);
+	fp2_new(T4);
+	fp2_new(X3);
+	fp2_new(Y3);
+	fp2_new(Z3);
+
+	if (ep2_is_infty(Q)) {
+		ep2_copy(R, P);
+		return ;
+	}
+	if (ep2_is_infty(P)) {
+		ep2_copy(R, Q);
+		return ;
+	}
+
+	fp2_sqr(T1, Z1);
+	fp2_mul(T2, T1, Z1);
+	fp2_mul(T1, T1, X2);
+	fp2_mul(T2, T2, Y2);
+	fp2_sub(T1, T1, X1);
+	fp2_sub(T2, T2, Y1);
+
+	if (fp2_is_zero(T1)) {
+		if(fp2_is_zero(T2)){
+			ep2_dbl_projc(R, Q);
+			return ;
+		}
+		else{
+			ep2_set_infty(R);
+			return ;
+		}
+	}
+
+	fp2_mul(Z3, Z1, T1);
+	fp2_sqr(T3, T1);
+	fp2_mul(T4, T3, T1);
+	fp2_mul(T3, T3, X1);
+	fp2_dbl(T1, T3);
+	fp2_sqr(X3, T2);
+	fp2_sub(X3, X3, T1);
+	fp2_sub(X3, X3, T4);
+	fp2_sub(T3, T3, X3);
+	fp2_mul(T3, T3, T2);
+	fp2_mul(T4, T4, Y1);
+	fp2_sub(Y3, T3, T4);
+
+	fp2_copy(R->x, X3);
+	fp2_copy(R->y, Y3);
+	fp2_copy(R->z, Z3);
+
+	fp2_free(T1);
+	fp2_free(T2);
+	fp2_free(T3);
+	fp2_free(T4);
+	fp2_free(X3);
+	fp2_free(Y3);
+	fp2_free(Z3);
 }
 
 static void sm9_eval_g_line(fp12_t num, fp12_t den, ep2_t T, ep2_t P, ep_t Q){
@@ -1285,6 +1449,11 @@ static void sm9_final_exponent(fp12_t r, const fp12_t f)
 	fp12_free(t1);
 }
 
+static void sm9_twist_point_neg(ep2_t R,const ep2_t Q){
+	fp2_copy(R->x, Q->x);
+	fp2_neg(R->y, Q->y);
+	fp2_copy(R->z, Q->z);
+}
 
 void sm9_pairing(fp12_t r, const ep2_t Q, const ep_t P){
 	// a)
@@ -1396,7 +1565,125 @@ void sm9_pairing(fp12_t r, const ep2_t Q, const ep_t P){
 	fp12_free(g_den);
 	fp12_free(fp12_tmp);
 
-	return 0;
+	return ;
+}
+
+void sm9_pairing_fast(fp12_t r, const ep2_t Q, const ep_t P){
+	// a)
+	const char *abits = "00100000000000000000000000000000000000010001020200020200101000020";
+	
+	fp12_t f, g, f_num, f_den, g_num, g_den, fp12_tmp;
+	ep2_t T, Q1, Q2, ep2_tmp, neg_Q;
+	ep_t _p;
+	bn_t n;
+
+	// null
+	ep_null(_p);
+	bn_null(n);
+	ep2_null(T);
+	ep2_null(Q1);
+	ep2_null(Q2);
+	ep2_null(ep2_tmp);
+	ep2_null(neg_Q);
+	fp12_null(f);
+	fp12_null(g);
+	fp12_null(f_num);
+	fp12_null(f_den);
+	fp12_null(g_num);
+	fp12_null(g_den);
+	fp12_null(fp12_tmp);
+
+	ep_new(_p);
+	bn_new(n);
+	ep2_new(T);
+	ep2_new(Q1);
+	ep2_new(Q2);
+	ep2_new(ep2_tmp);
+	ep2_new(neg_Q);
+	fp12_new(f);
+	fp12_new(g);
+	fp12_new(f_num);
+	fp12_new(f_den);
+	fp12_new(g_num);
+	fp12_new(g_den);
+	fp12_new(fp12_tmp);
+
+	sm9_twist_point_neg(neg_Q,Q);
+
+
+	// b)
+	ep2_copy(T, Q);
+	fp12_set_dig(f_num, 1);
+	fp12_set_dig(f_den, 1);
+
+	for(size_t i = 0; i < strlen(abits); i++)
+	{
+		// c)
+		fp12_sqr_t(f_num, f_num);
+		fp12_sqr_t(f_den, f_den);
+
+		sm9_eval_g_tangent(g_num, g_den, T, P);
+		// PERFORMANCE_TEST("sm9_eval_g_tangent",sm9_eval_g_tangent(g_num, g_den, T, P),10000);
+
+		fp12_mul_t(f_num, f_num, g_num);
+		fp12_mul_t(f_den, f_den, g_den);
+
+		ep2_dbl_projc(T, T);
+		// c.2)
+		if (abits[i] == '1'){
+			sm9_eval_g_line(g_num, g_den, T, Q, P);
+			// PERFORMANCE_TEST("sm9_eval_g_line",sm9_eval_g_line(g_num, g_den, T, Q, P),10000);
+			fp12_mul_t(f_num, f_num, g_num);
+			fp12_mul_t(f_den, f_den, g_den);
+			ep2_add_t(T, T, Q);  // T = T + Q
+		}
+		else if(abits[i] == '2'){
+			sm9_eval_g_line(g_num, g_den, T, neg_Q, P);
+			fp12_mul_t(f_num, f_num, g_num);
+			fp12_mul_t(f_den, f_den, g_den);
+			ep2_add_t(T, T, neg_Q);  // T = T - Q
+		}
+	}
+	// d)
+	ep2_pi1(Q1, Q);  // Q1 = pi_q(Q)
+	ep2_pi2(Q2, Q);  // Q2 = pi_{q^2}(Q), Q2 = -Q2
+	
+	// e)
+	sm9_eval_g_line(g_num, g_den, T, Q1, P);  // g = g_{T,Q1}(P)
+	fp12_mul_t(f_num, f_num, g_num);  // f = f * g = f * g_{T,Q1}(P)
+	fp12_mul_t(f_den, f_den, g_den);
+	ep2_add(T, T, Q1);  // T = T + Q1
+
+	// f)
+	sm9_eval_g_line(g_num, g_den, T, Q2, P);  // g = g_{T,-Q2}(P)
+	fp12_mul_t(f_num, f_num, g_num);  // f = f * g = f * g_{T,-Q2}(P)
+	fp12_mul_t(f_den, f_den, g_den);
+//	ep2_add(T, T, Q2);  // T = T - Q2
+
+	// g)
+	fp12_inv_t(f_den, f_den);  // f_den = f_den^{-1}
+
+	fp12_mul_t(r, f_num, f_den);  // r = f_num*f_den = f
+
+	sm9_final_exponent(r, r);  // r = f^{(q^12-1)/r'}
+	// PERFORMANCE_TEST("sm9_final_exponent", sm9_final_exponent(r, r), 1000);
+
+	ep_free(_p);
+	bn_free(n);
+	ep2_free(T);
+	ep2_free(Q1);
+	ep2_free(Q2);
+	ep2_free(ep2_tmp);
+	ep2_free(neg_Q);
+	fp12_free(f);
+	fp12_free(g);
+	fp12_free(f_num);
+	fp12_free(f_den);
+	fp12_free(g_num);
+	fp12_free(g_den);
+	fp12_free(fp12_tmp);
+
+	return ;
 }
 
 void sm9_pairing_omp(fp12_t r_arr[], const ep2_t Q_arr[], const ep_t P_arr[], const size_t arr_size, const size_t threads_num){

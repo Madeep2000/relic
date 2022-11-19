@@ -96,9 +96,8 @@ void performance_compare_num(const fp12_t a,const fp12_t b){
     d = Time_F(STOP);
     printf("fp12_mul_sparse : run %d times in %.2fs\n", count, d);
 
-    return 0;
+    return ;
 
-    return 0;
 }
 
 // GmSSL's fp12_mul,Relic's fp12_mul_t和fp12_sparse2性能比较
@@ -145,7 +144,7 @@ static void performance_compare_den(const fp12_t a,const fp12_t b){
     d = Time_F(STOP);
     printf("fp12_mul_sparse2: run %d times in %.2fs\n", count, d);
 
-    return 0;
+    return ;
 }
 /***************性能测试代码 end *******************/
 
@@ -275,6 +274,112 @@ void test_sm9_pairing(){
 	fp12_free(r);
 }
 
+void test_miller(){
+	g1_t g1;
+	ep2_t Ppub;
+	fp12_t r;
+
+	g1_null(g1);
+	g1_new(g1);
+	g1_get_gen(g1);
+
+
+	ep2_null(Ppub);
+	ep2_new(Ppub);
+
+	char x0[] = "29DBA116152D1F786CE843ED24A3B573414D2177386A92DD8F14D65696EA5E32";
+	char x1[] = "9F64080B3084F733E48AFF4B41B565011CE0711C5E392CFB0AB1B6791B94C408";
+	char y0[] = "41E00A53DDA532DA1A7CE027B7A46F741006E85F5CDFF0730E75C05FB4E3216D";
+	char y1[] = "69850938ABEA0112B57329F447E3A0CBAD3E2FDB1A77F335E89E1408D0EF1C25";
+	char z0[] = "1";
+	char z1[] = "0";
+
+	fp_read_str(Ppub->x[0], x0, strlen(x0), 16);
+	fp_read_str(Ppub->x[1], x1, strlen(x1), 16);
+	fp_read_str(Ppub->y[0], y0, strlen(y0), 16);
+	fp_read_str(Ppub->y[1], y1, strlen(y1), 16);
+	fp_read_str(Ppub->z[0], z0, strlen(z0), 16);
+	fp_read_str(Ppub->z[1], z1, strlen(z1), 16);
+
+	fp12_null(r);
+	fp12_new(r);
+
+	sm9_init();
+
+
+#if 1
+	// 测试正确性
+	printf("Fast sm9 pairing is running.\n");
+	sm9_pairing_fast(r, Ppub, g1);
+	printf("in: Ppub\n");
+	ep2_print(Ppub);
+	printf("in: g1\n");
+	ep_print(g1);
+	printf("out: r\n");
+	fp12_print(r);
+#endif
+#if 0
+/* 性能对比 */
+	test_sm9_pairing_fast(r,Ppub,g1);
+	test_sm9_pairing(r,Ppub,g1);
+#endif
+
+}
+
+void test_ep_add(){
+	ep2_t R,P,Q;
+
+	ep2_null(R);
+	ep2_new(R);	
+	ep2_null(Q);
+	ep2_new(Q);
+	ep2_null(P);
+	ep2_new(P);
+
+	ep2_rand(P);
+	ep2_rand(Q);
+	fp2_set_dig(Q->z,1);
+
+    int count;
+    int sec = 1;
+    double d = 0.0;
+
+    // 注册计时器
+    signal(SIGALRM, alarmed); 
+
+	
+    alarm(sec);
+    run = 1;
+    Time_F(START);
+    for (count = 0; run && count < 0x7fffffff; count++)
+    {
+        ep2_add_full(R,P,Q);
+    }
+    d = Time_F(STOP);
+    printf("GmSSL's ep2 add: run %d times in %.2fs\n", count, d);
+
+    alarm(sec);
+    run = 1;
+    Time_F(START);
+    for (count = 0; run && count < 0x7fffffff; count++)
+    {
+        ep2_add_t(R,P,Q);
+    }
+    d = Time_F(STOP);
+    printf("special ep2 add: run %d times in %.2fs\n", count, d);
+
+	alarm(sec);
+    run = 1;
+    Time_F(START);
+    for (count = 0; run && count < 0x7fffffff; count++)
+    {
+        ep2_add(R,P,Q);
+    }
+    d = Time_F(STOP);
+    printf("Relic's ep2 add: run %d times in %.2fs\n", count, d);
+	
+    return ;
+}
 
 void test_a_lot(){
 	g1_t g1;
@@ -594,7 +699,9 @@ int main(void) {
 	pc_param_print();
 
 	//test_sm9_pairing();
-	test_a_lot();
+	//test_a_lot();
+	//test_miller();
+	test_ep_add();
 	core_clean();
 
 	return 0;
