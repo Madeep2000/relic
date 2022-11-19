@@ -1,6 +1,6 @@
 #include "sm9.h"
 #include <time.h>
-#include "debug.h"
+//#include "debug.h"
 #include <pthread.h>
 #include <omp.h>
 
