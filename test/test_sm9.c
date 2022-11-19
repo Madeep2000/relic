@@ -219,6 +219,14 @@ void test_sm9_pairing(){
 // 	PERFORMANCE_TEST("pp_map_weilp_k12(r, g1, Ppub)", pp_map_weilp_k12(r, g1, Ppub), 1000);
 // 	PERFORMANCE_TEST("pp_map_oatep_k12(r, g1, Ppub)", pp_map_oatep_k12(r, g1, Ppub), 1000);
 // #endif
+	
+#if 0       
+	//test functions
+	
+	//sm9_pairing_function_test(r, Ppub, g1);
+	sm9_pairing_steps_test(r, Ppub, g1);
+	sm9_TEST(r,Ppub,g1);
+#endif
 
 #if 1
 	// 测试性能
