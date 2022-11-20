@@ -1587,9 +1587,9 @@ void sm9_pairing_fast(fp12_t r, const ep2_t Q, const ep_t P){
 		// PERFORMANCE_TEST("sm9_eval_g_tangent",sm9_eval_g_tangent(g_num, g_den, T, P),10000);
 
 		fp12_mul_sparse(f_num, f_num, g_num);
-		fp12_mul_t(f_den, f_den, g_den);
+		fp12_mul_sparse2(f_den, f_den, g_den);
 
-		ep2_dbl_projc(T, T);
+		ep2_dbl(T, T);
 		// c.2)
 		if (abits[i] == '1'){
 			sm9_eval_g_line(g_num, g_den, T, Q, P);
@@ -1643,6 +1643,7 @@ void sm9_pairing_fast(fp12_t r, const ep2_t Q, const ep_t P){
 	fp12_free(g_num);
 	fp12_free(g_den);
 	fp12_free(fp12_tmp);
+
 	return ;
 }
 

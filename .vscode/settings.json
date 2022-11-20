@@ -6,6 +6,8 @@
         "cmath": "c",
         "sm9.h": "c",
         "relic_test.h": "c",
+        "RELIC_FPX_LOW.H": "cpp",
+        "relic_bn_low.h": "c",
         "pthread.h": "c"
     }
 }

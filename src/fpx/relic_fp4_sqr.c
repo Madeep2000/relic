@@ -82,7 +82,7 @@ void fp4_sqr_unr(dv4_t c, fp4_t a) {
 		fp2_new(t);
 		dv2_new(u0);
 		dv2_new(u1);
-
+		
 		/* t0 = a^2. */
 		fp2_sqrn_low(u0, a[0]);
 		/* t1 = b^2. */

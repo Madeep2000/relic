@@ -708,8 +708,8 @@ int main(void) {
 
 	test_sm9_pairing();
 	//test_a_lot();
-	//test_miller();
-	// test_ep_add();
+	test_miller();
+	//test_ep_add();
 	core_clean();
 
 	return 0;
