@@ -192,7 +192,7 @@ void test_sm9_pairing(){
 
 #if 1
 	// 测试正确性
-	sm9_pairing_fast(r, Ppub, g1);
+	sm9_pairing(r, Ppub, g1);
 	printf("in: Ppub\n");
 	ep2_print(Ppub);
 	printf("in: g1\n");
