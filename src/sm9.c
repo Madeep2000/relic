@@ -1373,14 +1373,14 @@ void sm9_pairing(fp12_t r, const ep2_t Q, const ep_t P){
 	for(size_t i = 0; i < strlen(abits); i++)
 	{
 		// c)
-		fp12_sqr_t(f_num, f_num);
-		fp12_sqr_t(f_den, f_den);
+		fp12_sqr_t1(f_num, f_num);
+		fp12_sqr_t1(f_den, f_den);
 
 		sm9_eval_g_tangent(g_num, g_den, T, P);
 		// PERFORMANCE_TEST("sm9_eval_g_tangent",sm9_eval_g_tangent(g_num, g_den, T, P),10000);
 
-		fp12_mul_t(f_num, f_num, g_num);
-		fp12_mul_t(f_den, f_den, g_den);
+		fp12_mul_t1(f_num, f_num, g_num);
+		fp12_mul_t1(f_den, f_den, g_den);
 
 		ep2_dbl_projc(T, T);
 		// c.2)
@@ -1389,10 +1389,10 @@ void sm9_pairing(fp12_t r, const ep2_t Q, const ep_t P){
 			sm9_eval_g_line(g_num, g_den, T, Q, P);
 			// PERFORMANCE_TEST("sm9_eval_g_line",sm9_eval_g_line(g_num, g_den, T, Q, P),10000);
 
-			fp12_mul_t(f_num, f_num, g_num);
-			fp12_mul_t(f_den, f_den, g_den);
+			fp12_mul_t1(f_num, f_num, g_num);
+			fp12_mul_t1(f_den, f_den, g_den);
 
-			ep2_add_full(T, T, Q);  // T = T + Q
+			ep2_add_projc(T, T, Q);  // T = T + Q
 		}
 	}
 	// d)
@@ -1401,20 +1401,20 @@ void sm9_pairing(fp12_t r, const ep2_t Q, const ep_t P){
 	
 	// e)
 	sm9_eval_g_line(g_num, g_den, T, Q1, P);  // g = g_{T,Q1}(P)
-	fp12_mul_t(f_num, f_num, g_num);  // f = f * g = f * g_{T,Q1}(P)
-	fp12_mul_t(f_den, f_den, g_den);
-	ep2_add_full(T, T, Q1);  // T = T + Q1
+	fp12_mul_t1(f_num, f_num, g_num);  // f = f * g = f * g_{T,Q1}(P)
+	fp12_mul_t1(f_den, f_den, g_den);
+	ep2_add_projc(T, T, Q1);  // T = T + Q1
 
 	// f)
 	sm9_eval_g_line(g_num, g_den, T, Q2, P);  // g = g_{T,-Q2}(P)
-	fp12_mul_t(f_num, f_num, g_num);  // f = f * g = f * g_{T,-Q2}(P)
-	fp12_mul_t(f_den, f_den, g_den);
-	ep2_add_full(T, T, Q2);  // T = T - Q2
+	fp12_mul_t1(f_num, f_num, g_num);  // f = f * g = f * g_{T,-Q2}(P)
+	fp12_mul_t1(f_den, f_den, g_den);
+	// ep2_add_projc(T, T, Q2);  // T = T - Q2
 
 	// g)
 	fp12_inv_t(f_den, f_den);  // f_den = f_den^{-1}
 
-	fp12_mul_t(r, f_num, f_den);  // r = f_num*f_den = f
+	fp12_mul_t1(r, f_num, f_den);  // r = f_num*f_den = f
 
 	sm9_final_exponent(r, r);  // r = f^{(q^12-1)/r'}
 	// PERFORMANCE_TEST("sm9_final_exponent", sm9_final_exponent(r, r), 1000);
