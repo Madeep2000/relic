@@ -1,7 +1,7 @@
 #!/bin/bash
 
-rm -rf build
-mkdir build
+# rm -rf build
+# mkdir build
 # cd build && cmake -DMULTI=OPENMP -DCORES=4 .. && make -j8 && ./bin/test_sm9
 cd build && cmake .. && make -j8 && ./bin/test_sm9
 

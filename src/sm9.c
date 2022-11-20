@@ -1625,7 +1625,7 @@ void sm9_pairing_fast(fp12_t r, const ep2_t Q, const ep_t P){
 		sm9_eval_g_tangent(g_num, g_den, T, P);
 		// PERFORMANCE_TEST("sm9_eval_g_tangent",sm9_eval_g_tangent(g_num, g_den, T, P),10000);
 
-		fp12_mul_t(f_num, f_num, g_num);
+		fp12_mul_sparse(f_num, f_num, g_num);
 		fp12_mul_t(f_den, f_den, g_den);
 
 		ep2_dbl_projc(T, T);
@@ -1633,15 +1633,15 @@ void sm9_pairing_fast(fp12_t r, const ep2_t Q, const ep_t P){
 		if (abits[i] == '1'){
 			sm9_eval_g_line(g_num, g_den, T, Q, P);
 			// PERFORMANCE_TEST("sm9_eval_g_line",sm9_eval_g_line(g_num, g_den, T, Q, P),10000);
-			fp12_mul_t(f_num, f_num, g_num);
+			fp12_mul_sparse(f_num, f_num, g_num);
 			fp12_mul_t(f_den, f_den, g_den);
-			ep2_add_t(T, T, Q);  // T = T + Q
+			ep2_add_projc(T, T, Q);  // T = T + Q
 		}
 		else if(abits[i] == '2'){
 			sm9_eval_g_line(g_num, g_den, T, neg_Q, P);
-			fp12_mul_t(f_num, f_num, g_num);
+			fp12_mul_sparse(f_num, f_num, g_num);
 			fp12_mul_t(f_den, f_den, g_den);
-			ep2_add_t(T, T, neg_Q);  // T = T - Q
+			ep2_add_projc(T, T, neg_Q);  // T = T - Q
 		}
 	}
 	// d)
@@ -1652,7 +1652,7 @@ void sm9_pairing_fast(fp12_t r, const ep2_t Q, const ep_t P){
 	sm9_eval_g_line(g_num, g_den, T, Q1, P);  // g = g_{T,Q1}(P)
 	fp12_mul_t(f_num, f_num, g_num);  // f = f * g = f * g_{T,Q1}(P)
 	fp12_mul_t(f_den, f_den, g_den);
-	ep2_add(T, T, Q1);  // T = T + Q1
+	ep2_add_projc(T, T, Q1);  // T = T + Q1
 
 	// f)
 	sm9_eval_g_line(g_num, g_den, T, Q2, P);  // g = g_{T,-Q2}(P)
