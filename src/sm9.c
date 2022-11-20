@@ -1318,12 +1318,104 @@ static void sm9_final_exponent(fp12_t r, const fp12_t f)
 	fp12_free(t1);
 }
 
+#if 1 // crude final exponent
+
+static void sm9_final_exponent_hard_part1(fp12_t r, const fp12_t f)
+{
+	// a2 = 0xd8000000019062ed0000b98b0cb27659
+	// a3 = 0x2400000000215d941
+	const sm9_bn_t a2 = {0xcb27659, 0x0000b98b, 0x019062ed, 0xd8000000, 0, 0, 0, 0};
+	const sm9_bn_t a3 = {0x215d941, 0x40000000, 0x2, 0, 0, 0, 0, 0};
+	const sm9_bn_t nine = {9,0,0,0,0,0,0,0};
+	fp12_t t0, t1, t2, t3;
+
+	fp12_null(t0);
+	fp12_null(t1);
+	fp12_null(t2);
+	fp12_null(t3);
+
+	fp12_new(t0);
+	fp12_new(t1);
+	fp12_new(t2);
+	fp12_new(t3);
+
+	fp12_pow(t0, f, a3);
+	// PERFORMANCE_TEST("fp12_pow(t0, f, a3)",fp12_pow(t0, f, a3),1000);
+	fp12_inv_t(t0, t0);
+	// PERFORMANCE_TEST("fp12_inv_t(t0, t0)",fp12_inv_t(t0, t0),1000);
+	fp12_frobenius(t1, t0);
+	// PERFORMANCE_TEST("fp12_frobenius(t1, t0)",fp12_frobenius(t1, t0),1000);
+	fp12_mul_t1(t1, t0, t1);
+
+	fp12_mul_t1(t0, t0, t1);
+	fp12_frobenius(t2, f);
+	fp12_mul_t1(t3, t2, f);
+	fp12_pow(t3, t3, nine);
+
+	fp12_mul_t1(t0, t0, t3);
+	fp12_sqr_t1(t3, f);
+	fp12_sqr_t1(t3, t3);
+	fp12_mul_t1(t0, t0, t3);
+	fp12_sqr_t1(t2, t2);
+	fp12_mul_t1(t2, t2, t1);
+	fp12_frobenius2(t1, f);
+	// PERFORMANCE_TEST("fp12_frobenius2(t1, f)",fp12_frobenius2(t1, f),1000);
+	fp12_mul_t1(t1, t1, t2);
+
+	fp12_pow(t2, t1, a2);
+	// PERFORMANCE_TEST("fp12_pow(t2, t1, a2)",fp12_pow(t2, t1, a2),1000);
+	fp12_mul_t1(t0, t2, t0);
+	fp12_frobenius3(t1, f);
+	fp12_mul_t1(t1, t1, t0);
+
+	fp12_copy(r, t1);
+
+	fp12_free(t0);
+	fp12_free(t1);
+	fp12_free(t2);
+	fp12_free(t3);
+}
+
+static void sm9_final_exponent1(fp12_t r, const fp12_t f)
+{
+	fp12_t t0;
+	fp12_t t1;
+
+	fp12_null(t0);
+	fp12_null(t1);
+
+	fp12_new(t0);
+	fp12_new(t1);
+
+	fp12_frobenius6(t0, f);
+	// PERFORMANCE_TEST("fp12_frobenius6",fp12_frobenius6(t0, f),1000);
+	fp12_inv_t(t1, f);
+
+	fp12_mul_t1(t0, t0, t1);
+
+	fp12_frobenius2(t1, t0);
+	// PERFORMANCE_TEST("fp12_frobenius2",fp12_frobenius2(t1, t0),1000);
+	fp12_mul_t1(t0, t0, t1);
+
+	sm9_final_exponent_hard_part1(t0, t0);
+	// PERFORMANCE_TEST("sm9_final_exponent_hard_part",sm9_final_exponent_hard_part(t0, t0),1000);
+	fp12_copy(r, t0);
+	
+	fp12_free(t0);
+	fp12_free(t1);
+}
+
+#endif
+
+
 static void sm9_twist_point_neg(ep2_t R,const ep2_t Q){
 	fp2_copy(R->x, Q->x);
 	fp2_neg(R->y, Q->y);
 	fp2_copy(R->z, Q->z);
 }
 
+
+//original pairing 
 void sm9_pairing(fp12_t r, const ep2_t Q, const ep_t P){
 	// a)
 	const char *abits = "00100000000000000000000000000000000000010000101011101100100111110";
@@ -1416,7 +1508,7 @@ void sm9_pairing(fp12_t r, const ep2_t Q, const ep_t P){
 
 	fp12_mul_t1(r, f_num, f_den);  // r = f_num*f_den = f
 
-	sm9_final_exponent(r, r);  // r = f^{(q^12-1)/r'}
+	sm9_final_exponent1(r, r);  // r = f^{(q^12-1)/r'}
 	// PERFORMANCE_TEST("sm9_final_exponent", sm9_final_exponent(r, r), 1000);
 
 	ep_free(_p);
@@ -1615,15 +1707,21 @@ void sm9_pairing_function_test(fp12_t r, const ep2_t Q, const ep_t P)
 	fp12_set_dig(f_num, 1);
 	fp12_set_dig(f_den, 1);
 
-	PERFORMANCE_TEST_NEW("SM9 square ", fp12_sqr_t(f_num, f_den));
+	PERFORMANCE_TEST_NEW("SM9 square ", fp12_sqr_t1(f_num, f_den));
 	// fp12_mul_t(f_num, f_num, g_num);
-	PERFORMANCE_TEST_NEW("SM9 multiplication ",fp12_mul_t(f_num, f_num, g_num) );
+	PERFORMANCE_TEST_NEW("SM9 multiplication ",fp12_mul_t1(f_num, f_num, g_num) );
+
+	PERFORMANCE_TEST_NEW("SM9 square improved", fp12_sqr_t(f_num, f_den));
+	// fp12_mul_t(f_num, f_num, g_num);
+	PERFORMANCE_TEST_NEW("SM9 multiplication improved",fp12_mul_t(f_num, f_num, g_num) );
 
 	PERFORMANCE_TEST_NEW("ep2_dbl_projc  ",ep2_dbl_projc(T, T) );
 	PERFORMANCE_TEST_NEW("SM9 evaluation of g_line ",sm9_eval_g_line(g_num, g_den, T, Q, P) );
 	PERFORMANCE_TEST_NEW("SM9 evaluation of g_tangent ",sm9_eval_g_tangent(g_num, g_den, T, P));
 	PERFORMANCE_TEST_NEW("SM9 add full ",ep2_add_full(T, T, Q1));
-	PERFORMANCE_TEST_NEW("SM9 final exponentiation ",sm9_final_exponent(r, r));
+	PERFORMANCE_TEST_NEW("SM9 final exponentiation ",sm9_final_exponent1(r, r));
+	PERFORMANCE_TEST_NEW("SM9 final exponentiation improved",sm9_final_exponent(r, r));
+	
 	ep_free(_p);
 	bn_free(n);
 	ep2_free(T);
@@ -1712,14 +1810,14 @@ void sm9_pairing_steps_test(fp12_t r, const ep2_t Q, const ep_t P)
 	for (size_t i = 0; i < strlen(abits); i++)
 	{
 		// c)
-		fp12_sqr_t(f_num, f_num);
-		fp12_sqr_t(f_den, f_den);
+		fp12_sqr_t1(f_num, f_num);
+		fp12_sqr_t1(f_den, f_den);
 
 		sm9_eval_g_tangent(g_num, g_den, T, P);
 		// PERFORMANCE_TEST_NEW("sm9_eval_g_tangent",sm9_eval_g_tangent(g_num, g_den, T, P));
 
-		fp12_mul_t(f_num, f_num, g_num);
-		fp12_mul_t(f_den, f_den, g_den);
+		fp12_mul_t1(f_num, f_num, g_num);
+		fp12_mul_t1(f_den, f_den, g_den);
 
 		ep2_dbl_projc(T, T);
 		// c.2)
@@ -1728,8 +1826,8 @@ void sm9_pairing_steps_test(fp12_t r, const ep2_t Q, const ep_t P)
 			sm9_eval_g_line(g_num, g_den, T, Q, P);
 			// PERFORMANCE_TEST("sm9_eval_g_line",sm9_eval_g_line(g_num, g_den, T, Q, P),10000);
 
-			fp12_mul_t(f_num, f_num, g_num);
-			fp12_mul_t(f_den, f_den, g_den);
+			fp12_mul_t1(f_num, f_num, g_num);
+			fp12_mul_t1(f_den, f_den, g_den);
 
 			ep2_add_full(T, T, Q); // T = T + Q
 		}
@@ -1740,20 +1838,20 @@ void sm9_pairing_steps_test(fp12_t r, const ep2_t Q, const ep_t P)
 
 	// e)
 	sm9_eval_g_line(g_num, g_den, T, Q1, P); // g = g_{T,Q1}(P)
-	fp12_mul_t(f_num, f_num, g_num);		 // f = f * g = f * g_{T,Q1}(P)
-	fp12_mul_t(f_den, f_den, g_den);
+	fp12_mul_t1(f_num, f_num, g_num);		 // f = f * g = f * g_{T,Q1}(P)
+	fp12_mul_t1(f_den, f_den, g_den);
 	ep2_add_full(T, T, Q1); // T = T + Q1
 
 	// f)
 	sm9_eval_g_line(g_num, g_den, T, Q2, P); // g = g_{T,-Q2}(P)
-	fp12_mul_t(f_num, f_num, g_num);		 // f = f * g = f * g_{T,-Q2}(P)
-	fp12_mul_t(f_den, f_den, g_den);
+	fp12_mul_t1(f_num, f_num, g_num);		 // f = f * g = f * g_{T,-Q2}(P)
+	fp12_mul_t1(f_den, f_den, g_den);
 	ep2_add_full(T, T, Q2); // T = T - Q2
 
 	// g)
 	fp12_inv_t(f_den, f_den); // f_den = f_den^{-1}
 
-	fp12_mul_t(r, f_num, f_den); // r = f_num*f_den = f
+	fp12_mul_t1(r, f_num, f_den); // r = f_num*f_den = f
 
 
 
@@ -1769,7 +1867,7 @@ void sm9_pairing_steps_test(fp12_t r, const ep2_t Q, const ep_t P)
 	TIME_F(START);
 	for(count=0;run_t&&count<0x7fffffff;count++){
 		
-		sm9_final_exponent(r, r); // r = f^{(q^12-1)/r'}
+		sm9_final_exponent1(r, r); // r = f^{(q^12-1)/r'}
 		// PERFORMANCE_TEST("sm9_final_exponent", sm9_final_exponent(r, r), 1000);
 	}
 	d = TIME_F(STOP);
