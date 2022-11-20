@@ -5,6 +5,7 @@
         "*.tcc": "c",
         "cmath": "c",
         "sm9.h": "c",
-        "relic_test.h": "c"
+        "relic_test.h": "c",
+        "pthread.h": "c"
     }
 }
