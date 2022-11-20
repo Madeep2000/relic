@@ -1644,7 +1644,6 @@ void sm9_pairing_fast(fp12_t r, const ep2_t Q, const ep_t P){
 	fp12_free(g_num);
 	fp12_free(g_den);
 	fp12_free(fp12_tmp);
-
 	return ;
 }
 
