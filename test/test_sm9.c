@@ -149,15 +149,90 @@ static void performance_compare_den(const fp12_t a,const fp12_t b){
 /***************性能测试代码 end *******************/
 
 void sm9_pairing_omp_t(fp12_t r_arr[], const ep2_t Q_arr[], const ep_t P_arr[], const size_t arr_size, const size_t threads_num){
-	omp_set_num_threads(threads_num);	
-	#pragma omp parallel for
-	for (size_t i = 0; i < arr_size; i++)
+	// omp_set_num_threads(threads_num);
+	// sm9_init();
+
+	#pragma omp parallel for num_threads(threads_num)
+	for (size_t i = 0; i < arr_size*2; i++)
 	{
-		sm9_pairing(r_arr[(i)], Q_arr[(i)], P_arr[(i)]);
+		
+		// sm9_pairing(r_arr[0], Q_arr[0], P_arr[0]);
+		g1_t g1;
+		ep2_t Ppub;
+		fp12_t r;
+
+		g1_null(g1);
+		g1_new(g1);
+		ep2_null(Ppub);
+		ep2_new(Ppub);
+		fp12_null(r);
+		fp12_new(r);
+
+		g1_get_gen(g1);
+
+		char x0[] = "29DBA116152D1F786CE843ED24A3B573414D2177386A92DD8F14D65696EA5E32";
+		char x1[] = "9F64080B3084F733E48AFF4B41B565011CE0711C5E392CFB0AB1B6791B94C408";
+		char y0[] = "41E00A53DDA532DA1A7CE027B7A46F741006E85F5CDFF0730E75C05FB4E3216D";
+		char y1[] = "69850938ABEA0112B57329F447E3A0CBAD3E2FDB1A77F335E89E1408D0EF1C25";
+		char z0[] = "1";
+		char z1[] = "0";
+
+		fp_read_str(Ppub->x[0], x0, strlen(x0), 16);
+		fp_read_str(Ppub->x[1], x1, strlen(x1), 16);
+		fp_read_str(Ppub->y[0], y0, strlen(y0), 16);
+		fp_read_str(Ppub->y[1], y1, strlen(y1), 16);
+		fp_read_str(Ppub->z[0], z0, strlen(z0), 16);
+		fp_read_str(Ppub->z[1], z1, strlen(z1), 16);
+		
+		sm9_pairing(r, Ppub, g1);
+
+		sm9_clean();
+		g1_free(g1);
+		ep2_free(Ppub);
+		fp12_free(r);
+		// sm9_pairing_test();
 	}
 }
 
-void test_sm9_pairing(){
+void sm9_pairing_test(){
+	g1_t g1;
+	ep2_t Ppub;
+	fp12_t r;
+
+	g1_null(g1);
+	g1_new(g1);
+	ep2_null(Ppub);
+	ep2_new(Ppub);
+	fp12_null(r);
+	fp12_new(r);
+
+	g1_get_gen(g1);
+
+	char x0[] = "29DBA116152D1F786CE843ED24A3B573414D2177386A92DD8F14D65696EA5E32";
+	char x1[] = "9F64080B3084F733E48AFF4B41B565011CE0711C5E392CFB0AB1B6791B94C408";
+	char y0[] = "41E00A53DDA532DA1A7CE027B7A46F741006E85F5CDFF0730E75C05FB4E3216D";
+	char y1[] = "69850938ABEA0112B57329F447E3A0CBAD3E2FDB1A77F335E89E1408D0EF1C25";
+	char z0[] = "1";
+	char z1[] = "0";
+
+	fp_read_str(Ppub->x[0], x0, strlen(x0), 16);
+	fp_read_str(Ppub->x[1], x1, strlen(x1), 16);
+	fp_read_str(Ppub->y[0], y0, strlen(y0), 16);
+	fp_read_str(Ppub->y[1], y1, strlen(y1), 16);
+	fp_read_str(Ppub->z[0], z0, strlen(z0), 16);
+	fp_read_str(Ppub->z[1], z1, strlen(z1), 16);
+	
+	sm9_init();
+	
+	sm9_pairing(r, Ppub, g1);
+
+	sm9_clean();
+	g1_free(g1);
+	ep2_free(Ppub);
+	fp12_free(r);
+}
+
+void test_sm9_pairing(int threads_num){
 	g1_t g1;
 	ep2_t Ppub;
 	fp12_t r;
@@ -165,7 +240,6 @@ void test_sm9_pairing(){
 	g1_null(g1);
 	g1_new(g1);
 	g1_get_gen(g1);
-
 
 	ep2_null(Ppub);
 	ep2_new(Ppub);
@@ -189,8 +263,11 @@ void test_sm9_pairing(){
 
 	sm9_init();
 
-
-#if 1
+	sm9_clean();
+	g1_free(g1);
+	ep2_free(Ppub);
+	fp12_free(r);
+#if 0
 	// 测试正确性
 	sm9_pairing_fast(r, Ppub, g1);
 	printf("in: Ppub\n");
@@ -213,14 +290,14 @@ void test_sm9_pairing(){
 	// fp12_print(r);
 #endif
 
-// #if 1
+// #if 0
 // 	PERFORMANCE_TEST("pairing", sm9_pairing(r, Ppub, g1), 1000);
 // 	PERFORMANCE_TEST("pp_map_tatep_k12(r, g1, Ppub)", pp_map_tatep_k12(r, g1, Ppub), 1000);
 // 	PERFORMANCE_TEST("pp_map_weilp_k12(r, g1, Ppub)", pp_map_weilp_k12(r, g1, Ppub), 1000);
 // 	PERFORMANCE_TEST("pp_map_oatep_k12(r, g1, Ppub)", pp_map_oatep_k12(r, g1, Ppub), 1000);
 // #endif
 	
-#if 1       
+#if 0      
 	//test functions
 	
 	sm9_pairing_function_test(r, Ppub, g1);
@@ -228,7 +305,7 @@ void test_sm9_pairing(){
 	sm9_TEST(r,Ppub,g1);
 #endif
 
-#if 0
+#if 1
 	// 测试性能
 	// PERFORMANCE_TEST("pairing", sm9_pairing(r, Ppub, g1), 1000);
 	pthread_attr_t attr; // 定义线程属性
@@ -251,10 +328,15 @@ void test_sm9_pairing(){
 	}
 	
 	double begin, end;
-	int threads_num = 5;
-	omp_set_num_threads(threads_num);
+	// int threads_num = 5;
+	// omp_set_num_threads(threads_num);
 	begin = omp_get_wtime();
 	sm9_pairing_omp_t(r_arr, Ppub_arr, g1_arr, count, threads_num);
+	end = omp_get_wtime();
+	printf("run %d times, threads num: %d, total time: %f s, one time: %f s\n", \
+			count, threads_num, 1.0*(end-begin), 1.0*(end-begin)/count);
+
+	
 	// #pragma omp parallel	
 	// {
 	// 	int id = omp_get_thread_num();
@@ -264,9 +346,7 @@ void test_sm9_pairing(){
 	// 		sm9_pairing(r_arr[i+id], Ppub_arr[i+id], g1_arr[i+id]);
 	// 	}
 	// }
-	end = omp_get_wtime();
-	printf("run %d times, threads num: %d, total time: %f s, one time: %f s\n", \
-       	   count, threads_num, 1.0*(end-begin), 1.0*(end-begin)/count);
+
 	// 清理空间
 	for (size_t i = 0; i < count; i++)
 	{
@@ -692,7 +772,84 @@ void test_a_lot(){
 	return;
 }
 
-int main(void) {
+void test()
+{
+	for (int i = 0; i < 80000; i++)
+	{
+
+	}
+}
+ 
+int test_main()
+{
+	float startTime = omp_get_wtime();
+ 
+	//指定两个线程
+#pragma omp parallel for num_threads(2)
+	for (int i = 0; i < 80000; i++)
+	{
+		test();
+	}
+	float endTime = omp_get_wtime();
+	printf("指定 2 个线程，执行时间: %f\n", endTime - startTime);
+	startTime = endTime;
+ 
+	//指定4个线程
+#pragma omp parallel for num_threads(4)
+	for (int i = 0; i < 80000; i++)
+	{
+		test();
+	}
+	endTime = omp_get_wtime();
+	printf("指定 4 个线程，执行时间: %f\n", endTime - startTime);
+	startTime = endTime;
+ 
+	//指定8个线程  
+#pragma omp parallel for num_threads(8)
+	for (int i = 0; i < 80000; i++)
+	{
+		test();
+	}
+	endTime = omp_get_wtime();
+	printf("指定 8 个线程，执行时间: %f\n", endTime - startTime);
+	startTime = endTime;
+ 
+	//指定12个线程
+#pragma omp parallel for num_threads(12)
+	for (int i = 0; i < 80000; i++)
+	{
+		test();
+	}
+	endTime = omp_get_wtime();
+	printf("指定 12 个线程，执行时间: %f\n", endTime - startTime);
+	startTime = endTime;
+ 
+	//不使用OpenMP
+	for (int i = 0; i < 80000; i++)
+	{
+		test();
+	}
+	endTime = omp_get_wtime();
+	printf("不使用OpenMP多线程，执行时间: %f\n", endTime - startTime);
+	startTime = endTime;
+
+	return 0;
+ 
+}
+
+int str2int(char *str){
+	int ret = 0;
+	int base = 10;
+	for (size_t i = 0; str[i]; i++)
+	{
+		if(i)
+			ret *= base;
+		ret += (str[i]-'0');
+	}
+	return ret;
+}
+
+int main(int argc, char *argv[]) {
 	if (core_init() != RLC_OK) {
 		core_clean();
 		return 1;
@@ -704,11 +861,22 @@ int main(void) {
 		return 0;
 	}
 
-	pc_param_print();
+	// pc_param_print();
+	// test_main();
+	if(argc == 1){
+		test_sm9_pairing(1);
+		test_sm9_pairing(2);
+		test_sm9_pairing(4);
+		test_sm9_pairing(8);
+		test_sm9_pairing(12);
+		test_sm9_pairing(16);
+	}else{
+		int num = str2int(argv[1]);
+		test_sm9_pairing(num);
+	}
 
-	test_sm9_pairing();
 	//test_a_lot();
-	test_miller();
+	// test_miller();
 	//test_ep_add();
 	core_clean();
 

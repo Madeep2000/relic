@@ -1,5 +1,6 @@
 #include "sm9.h"
 #include "../test/debug.h"
+
 void sm9_init(){
 	// beta   = 0x6c648de5dc0a3f2cf55acc93ee0baf159f9d411806dc5177f5b21fd3da24d011
 	// alpha1 = 0x3f23ea58e5720bdb843c6cfa9c08674947c5c86e0ddd04eda91d8354377b698b
@@ -889,17 +890,22 @@ static void fp12_frobenius6(fp12_t r, const fp12_t x)
 	fp4_free(b);
 	fp4_free(c);
 }
-
+#include <inttypes.h>
 static void ep2_pi1(ep2_t R, const ep2_t P)
 {
 	//const c = 0x3f23ea58e5720bdb843c6cfa9c08674947c5c86e0ddd04eda91d8354377b698bn;
-	fp_t c;
-	fp_null(c);
-	fp_new(c);
+	fp_t c = {0x1a98dfbd4575299f, 0x9ec8547b245c54fd, 0xf51f5eac13df846c, 0x9ef74015d5a16393};
+	// fp_null(c);
+	// fp_new(c);
 
-	char c_str[] = "3F23EA58E5720BDB843C6CFA9C08674947C5C86E0DDD04EDA91D8354377B698B";
+	// char c_str[] = "3F23EA58E5720BDB843C6CFA9C08674947C5C86E0DDD04EDA91D8354377B698B";
 
-	fp_read_str(c, c_str, strlen(c_str), 16);
+	// fp_read_str(c, c_str, strlen(c_str), 16);
+	// printf("c[0] = %"PRIx64"\n", c[0]);
+	// printf("c[1] = %"PRIx64"\n", c[1]);
+	// printf("c[2] = %"PRIx64"\n", c[2]);
+	// printf("c[3] = %"PRIx64"\n", c[3]);
+	// return 1;
 
 	fp2_conjugate(R->x, P->x);  // X[0], -X[1]
 	fp2_conjugate(R->y, P->y);
@@ -912,13 +918,18 @@ static void ep2_pi1(ep2_t R, const ep2_t P)
 static void ep2_pi2(ep2_t R, const ep2_t P)
 {
 	//c = 0xf300000002a3a6f2780272354f8b78f4d5fc11967be65334
-	fp_t c;
-	fp_null(c);
-	fp_new(c);
+	fp_t c = {0xb626197dce4736ca, 0x8296b3557ed0186, 0x9c705db2fd91512a, 0x1c753e748601c992};
+	// fp_null(c);
+	// fp_new(c);
 
-	char c_str[] = "F300000002A3A6F2780272354F8B78F4D5FC11967BE65334";
+	// char c_str[] = "F300000002A3A6F2780272354F8B78F4D5FC11967BE65334";
 
-	fp_read_str(c, c_str, strlen(c_str), 16);
+	// fp_read_str(c, c_str, strlen(c_str), 16);
+	// printf("c[0] = %"PRIx64"\n", c[0]);
+	// printf("c[1] = %"PRIx64"\n", c[1]);
+	// printf("c[2] = %"PRIx64"\n", c[2]);
+	// printf("c[3] = %"PRIx64"\n", c[3]);
+	// return 1;
 
 	fp2_copy(R->x, P->x);
 	fp2_neg(R->y, P->y);
@@ -1480,10 +1491,8 @@ void sm9_pairing(fp12_t r, const ep2_t Q, const ep_t P){
 		{
 			sm9_eval_g_line(g_num, g_den, T, Q, P);
 			// PERFORMANCE_TEST("sm9_eval_g_line",sm9_eval_g_line(g_num, g_den, T, Q, P),10000);
-
 			fp12_mul_t1(f_num, f_num, g_num);
 			fp12_mul_t1(f_den, f_den, g_den);
-
 			ep2_add_projc(T, T, Q);  // T = T + Q
 		}
 	}

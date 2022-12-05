@@ -1,5 +1,6 @@
 macro(ADD_MODULE MODULE)
-	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
+	
+	SET(CMAKE_C_FLAGS " -fopenmp")
 	add_executable(test_${MODULE} test_${MODULE}.c)
 	if (STLIB)
 		target_link_libraries(test_${MODULE} ${RELIC_S})
