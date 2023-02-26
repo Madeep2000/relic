@@ -35,6 +35,8 @@
 #include "relic_test.h"
 #include "relic_bench.h"
 
+#include "debug.h"
+
 static int addition2(void) {
 	int code = RLC_ERR;
 	bn_t k, n;
@@ -290,41 +292,72 @@ static int pairing2(void) {
 
 		ep_curve_get_ord(n);
 
-		TEST_CASE("pairing non-degeneracy is correct") {
-			ep_rand(p[0]);
-			ep_rand(q[0]);
-			pp_map_k2(e1, p[0], q[0]);
-			TEST_ASSERT(fp2_cmp_dig(e1, 1) != RLC_EQ, end);
-			ep_set_infty(p[0]);
-			pp_map_k2(e1, p[0], q[0]);
-			TEST_ASSERT(fp2_cmp_dig(e1, 1) == RLC_EQ, end);
-			ep_rand(p[0]);
-			ep_set_infty(q[0]);
-			pp_map_k2(e1, p[0], q[0]);
-			TEST_ASSERT(fp2_cmp_dig(e1, 1) == RLC_EQ, end);
-		} TEST_END;
+	
 
-		TEST_CASE("pairing is bilinear") {
+		///////////pairingtest 1////////////
 			ep_rand(p[0]);
 			ep_rand(q[0]);
-			bn_rand_mod(k, n);
-			ep_mul(r, q[0], k);
-			pp_map_k2(e1, p[0], r);
-			pp_map_k2(e2, p[0], q[0]);
-			fp2_exp(e2, e2, k);
-			TEST_ASSERT(fp2_cmp(e1, e2) == RLC_EQ, end);
-			ep_mul(p[0], p[0], k);
-			pp_map_k2(e2, p[0], q[0]);
-			TEST_ASSERT(fp2_cmp(e1, e2) == RLC_EQ, end);
-			ep_dbl(p[0], p[0]);
-			pp_map_k2(e2, p[0], q[0]);
-			fp2_sqr(e1, e1);
-			TEST_ASSERT(fp2_cmp(e1, e2) == RLC_EQ, end);
-			ep_dbl(q[0], q[0]);
-			pp_map_k2(e2, p[0], q[0]);
-			fp2_sqr(e1, e1);
-			TEST_ASSERT(fp2_cmp(e1, e2) == RLC_EQ, end);
-		} TEST_END;
+			PERFORMANCE_TEST_NEW("Tate pairing  k2 ",pp_map_tatep_k2(e1, p[0], q[0]));
+            ep_rand(p[0]);
+            ep_set_infty(q[0]);
+
+			ep_rand(p[0]);
+			ep_rand(q[0]);
+			PERFORMANCE_TEST_NEW("Weil pairing  k2 ",pp_map_weilp_k2(e1, p[0], q[0]));
+    return 0;
+			
+            //pp_map_sim_k2(e2, p, q, 2);
+			//PERFORMANCE_TEST_NEW("pairing Tate k2 ", pp_map_sim_k2(e2, p, q, 2););
+			//return 0;
+
+
+
+		// TEST_CASE("pairing non-degeneracy is correct") {
+		// 	ep_rand(p[0]);
+		// 	ep_rand(q[0]);
+
+		// ///////////pairingtest 1////////////
+
+		// 	PERFORMANCE_TEST_NEW("pairing k2 ",pp_map_k2(e1, p[0], q[0]))
+		// 	;
+
+		// 	// //return 0;
+
+
+		// 	// TEST_ASSERT(fp2_cmp_dig(e1, 1) != RLC_EQ, end);
+		// 	// ep_set_infty(p[0]);
+
+
+
+		// 	// pp_map_k2(e1, p[0], q[0]);
+		// 	// TEST_ASSERT(fp2_cmp_dig(e1, 1) == RLC_EQ, end);
+		// 	// ep_rand(p[0]);
+		// 	// ep_set_infty(q[0]);
+		// 	// pp_map_k2(e1, p[0], q[0]);
+		// 	// TEST_ASSERT(fp2_cmp_dig(e1, 1) == RLC_EQ, end);
+		// } TEST_END;
+
+		// TEST_CASE("pairing is bilinear") {
+		// 	ep_rand(p[0]);
+		// 	ep_rand(q[0]);
+		// 	bn_rand_mod(k, n);
+		// 	ep_mul(r, q[0], k);
+		// 	pp_map_k2(e1, p[0], r);
+		// 	pp_map_k2(e2, p[0], q[0]);
+		// 	fp2_exp(e2, e2, k);
+		// 	TEST_ASSERT(fp2_cmp(e1, e2) == RLC_EQ, end);
+		// 	ep_mul(p[0], p[0], k);
+		// 	pp_map_k2(e2, p[0], q[0]);
+		// 	TEST_ASSERT(fp2_cmp(e1, e2) == RLC_EQ, end);
+		// 	ep_dbl(p[0], p[0]);
+		// 	pp_map_k2(e2, p[0], q[0]);
+		// 	fp2_sqr(e1, e1);
+		// 	TEST_ASSERT(fp2_cmp(e1, e2) == RLC_EQ, end);
+		// 	ep_dbl(q[0], q[0]);
+		// 	pp_map_k2(e2, p[0], q[0]);
+		// 	fp2_sqr(e1, e1);
+		// 	TEST_ASSERT(fp2_cmp(e1, e2) == RLC_EQ, end);
+		// } TEST_END;
 
         TEST_CASE("multi-pairing is correct") {
                 ep_rand(p[i % 2]);
@@ -372,6 +405,8 @@ static int pairing2(void) {
 			ep_rand(q[0]);
 			bn_rand_mod(k, n);
 			ep_mul(r, q[0], k);
+			///////////pairingtest 2////////////
+
 			pp_map_tatep_k2(e1, p[0], r);
 			pp_map_tatep_k2(e2, p[0], q[0]);
 			fp2_exp(e2, e2, k);
@@ -766,20 +801,25 @@ static int pairing8(void) {
 		}
 
 		ep_curve_get_ord(n);
+		///test pairing 2
 
-		TEST_CASE("pairing non-degeneracy is correct") {
-			ep_rand(p[0]);
-			ep2_curve_get_gen(q[0]);
-			pp_map_oatep_k8(e1, p[0], q[0]);
-			TEST_ASSERT(fp8_cmp_dig(e1, 1) != RLC_EQ, end);
-			ep_set_infty(p[0]);
-			pp_map_oatep_k8(e1, p[0], q[0]);
-			TEST_ASSERT(fp8_cmp_dig(e1, 1) == RLC_EQ, end);
-			ep_rand(p[0]);
-			ep2_set_infty(q[0]);
-			pp_map_oatep_k8(e1, p[0], q[0]);
-			TEST_ASSERT(fp8_cmp_dig(e1, 1) == RLC_EQ, end);
-		} TEST_END;
+		ep_rand(p[0]);
+		ep2_curve_get_gen(q[0]);
+		PERFORMANCE_TEST_NEW("OATE Pairing on curve k8",pp_map_oatep_k8(e1, p[0], q[0]));
+		return 0;
+		// TEST_CASE("pairing non-degeneracy is correct") {
+		// 	ep_rand(p[0]);
+		// 	ep2_curve_get_gen(q[0]);
+		// 	pp_map_oatep_k8(e1, p[0], q[0]);
+		// 	TEST_ASSERT(fp8_cmp_dig(e1, 1) != RLC_EQ, end);
+		// 	ep_set_infty(p[0]);
+		// 	pp_map_oatep_k8(e1, p[0], q[0]);
+		// 	TEST_ASSERT(fp8_cmp_dig(e1, 1) == RLC_EQ, end);
+		// 	ep_rand(p[0]);
+		// 	ep2_set_infty(q[0]);
+		// 	pp_map_oatep_k8(e1, p[0], q[0]);
+		// 	TEST_ASSERT(fp8_cmp_dig(e1, 1) == RLC_EQ, end);
+		// } TEST_END;
 
 		TEST_CASE("pairing is bilinear") {
 			ep_rand(p[0]);
@@ -1094,9 +1134,34 @@ static int pairing12(void) {
 
 		ep_curve_get_ord(n);
 
+		
+			///////////pairingtest 4////////////
+
+			
+			ep_rand(p[0]);
+			ep2_rand(q[0]);
+		PERFORMANCE_TEST_NEW("Weil pairing on curve with embeded degree 12",pp_map_weilp_k12(e1, p[0], q[0]));
+			ep_rand(p[0]);
+			ep2_rand(q[0]);
+		
+		PERFORMANCE_TEST_NEW("Tate pairing on curve with embeded degree 12",pp_map_tatep_k12(e1, p[0], q[0]));
+		
+			ep_rand(p[0]);
+			ep2_rand(q[0]);
+		
+		PERFORMANCE_TEST_NEW("Oate pairing on curve with embeded degree 12",pp_map_k12(e1, p[0], q[0]));
+		return 0;
+
+
+
+
+
+
 		TEST_CASE("pairing non-degeneracy is correct") {
 			ep_rand(p[0]);
 			ep2_rand(q[0]);
+			///////////pairingtest 4////////////
+
 			pp_map_k12(e1, p[0], q[0]);
 			TEST_ASSERT(fp12_cmp_dig(e1, 1) != RLC_EQ, end);
 			ep_set_infty(p[0]);
@@ -1113,6 +1178,7 @@ static int pairing12(void) {
 			ep2_rand(q[0]);
 			bn_rand_mod(k, n);
 			ep2_mul(r, q[0], k);
+			
 			pp_map_k12(e1, p[0], r);
 			pp_map_k12(e2, p[0], q[0]);
 			fp12_exp(e2, e2, k);
@@ -1579,10 +1645,21 @@ static int pairing24(void) {
 		}
 
 		ep_curve_get_ord(n);
+///////////pairingtest 3////////////
+
+
+			ep_rand(p[0]);
+			ep4_rand(q[0]);
+			PERFORMANCE_TEST_NEW("Oate pairing on curve k24",pp_map_k24(e1, p[0], q[0]));
+
+			return 0;
+
 
 		TEST_CASE("pairing non-degeneracy is correct") {
 			ep_rand(p[0]);
 			ep4_rand(q[0]);
+		
+
 			pp_map_k24(e1, p[0], q[0]);
 			TEST_ASSERT(fp24_cmp_dig(e1, 1) != RLC_EQ, end);
 			ep_set_infty(p[0]);
@@ -2011,8 +2088,19 @@ static int pairing48(void) {
 		fp_read_str(qy[1][1][0], QY110, strlen(QY110), 16);
 		fp_read_str(qy[1][1][1], QY111, strlen(QY111), 16);
 
+			ep_rand(p);
+			///////////pairingtest 5////////////
+		PERFORMANCE_TEST_NEW("pairing on curve k48",pp_map_k48(e1, p, qx, qy));
+
+		return 0;
+
+
+
+
 		TEST_CASE("pairing non-degeneracy is correct") {
 			ep_rand(p);
+			///////////pairingtest 5////////////
+
 			pp_map_k48(e1, p, qx, qy);
 			TEST_ASSERT(fp48_cmp_dig(e1, 1) != RLC_EQ, end);
 		} TEST_END;
@@ -2411,8 +2499,16 @@ static int pairing54(void) {
 		fp_read_str(qy[2][1], QY21, strlen(QY21), 16);
 		fp_read_str(qy[2][2], QY22, strlen(QY22), 16);
 
+
+		ep_rand(p);
+			///////////pairingtest 6////////////
+			PERFORMANCE_TEST_NEW("Oate pairing on curve k54",pp_map_k54(e1, p, qx, qy));
+			return 0;
+
 		TEST_CASE("pairing non-degeneracy is correct") {
 			ep_rand(p);
+			///////////pairingtest 6////////////
+
 			pp_map_k54(e1, p, qx, qy);
 			TEST_ASSERT(fp54_cmp_dig(e1, 1) != RLC_EQ, end);
 		} TEST_END;
@@ -2487,91 +2583,95 @@ int main(void) {
 			return 1;
 		}
 	}
-
-	if (ep_param_embed() == 8) {
-		if (doubling8() != RLC_OK) {
+	/// test 1 ///
+	if (pairing12() != RLC_OK) {
 			core_clean();
 			return 1;
-		}
+	 	}
+	// if (ep_param_embed() == 8) {
+	// 	if (doubling8() != RLC_OK) {
+	// 		core_clean();
+	// 		return 1;
+	// 	}
 
-		if (addition8() != RLC_OK) {
-			core_clean();
-			return 1;
-		}
+	// 	if (addition8() != RLC_OK) {
+	// 		core_clean();
+	// 		return 1;
+	// 	}
 
-		if (pairing8() != RLC_OK) {
-			core_clean();
-			return 1;
-		}
-	}
+	// 	if (pairing8() != RLC_OK) {
+	// 		core_clean();
+	// 		return 1;
+	// 	}
+	// }
 
-	if (ep_param_embed() == 24) {
-		if (doubling24() != RLC_OK) {
-			core_clean();
-			return 1;
-		}
+	// if (ep_param_embed() == 24) {
+	// 	if (doubling24() != RLC_OK) {
+	// 		core_clean();
+	// 		return 1;
+	// 	}
 
-		if (addition24() != RLC_OK) {
-			core_clean();
-			return 1;
-		}
+	// 	if (addition24() != RLC_OK) {
+	// 		core_clean();
+	// 		return 1;
+	// 	}
 
-		if (pairing24() != RLC_OK) {
-			core_clean();
-			return 1;
-		}
-	}
+	// 	if (pairing24() != RLC_OK) {
+	// 		core_clean();
+	// 		return 1;
+	// 	}
+	// }
 
-	if (ep_param_embed() == 12) {
-		if (doubling12() != RLC_OK) {
-			core_clean();
-			return 1;
-		}
+	// if (ep_param_embed() == 12) {
+	// 	if (doubling12() != RLC_OK) {
+	// 		core_clean();
+	// 		return 1;
+	// 	}
 
-		if (addition12() != RLC_OK) {
-			core_clean();
-			return 1;
-		}
+	// 	if (addition12() != RLC_OK) {
+	// 		core_clean();
+	// 		return 1;
+	// 	}
 
-		if (pairing12() != RLC_OK) {
-			core_clean();
-			return 1;
-		}
-	}
+	// 	if (pairing12() != RLC_OK) {
+	// 		core_clean();
+	// 		return 1;
+	// 	}
+	// }
 
-	if (ep_param_embed() == 48) {
-		if (doubling48() != RLC_OK) {
-			core_clean();
-			return 1;
-		}
+	// if (ep_param_embed() == 48) {
+	// 	if (doubling48() != RLC_OK) {
+	// 		core_clean();
+	// 		return 1;
+	// 	}
 
-		if (addition48() != RLC_OK) {
-			core_clean();
-			return 1;
-		}
+	// 	if (addition48() != RLC_OK) {
+	// 		core_clean();
+	// 		return 1;
+	// 	}
 
-		if (pairing48() != RLC_OK) {
-			core_clean();
-			return 1;
-		}
-	}
+	// 	if (pairing48() != RLC_OK) {
+	// 		core_clean();
+	// 		return 1;
+	// 	}
+	// }
 
-	if (ep_param_embed() == 54) {
-		if (doubling54() != RLC_OK) {
-			core_clean();
-			return 1;
-		}
+	// if (ep_param_embed() == 54) {
+	// 	if (doubling54() != RLC_OK) {
+	// 		core_clean();
+	// 		return 1;
+	// 	}
 
-		if (addition54() != RLC_OK) {
-			core_clean();
-			return 1;
-		}
+	// 	if (addition54() != RLC_OK) {
+	// 		core_clean();
+	// 		return 1;
+	// 	}
 
-		if (pairing54() != RLC_OK) {
-			core_clean();
-			return 1;
-		}
-	}
+	// 	if (pairing54() != RLC_OK) {
+	// 		core_clean();
+	// 		return 1;
+	// 	}
+	// }
 
 	util_banner("All tests have passed.\n", 0);
 

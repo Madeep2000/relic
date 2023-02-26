@@ -276,7 +276,7 @@ void test_sm9_pairing(int threads_num){
 	ep_print(g1);
 	printf("out: r\n");
 	fp12_print(r);
-	return 1;
+	
 	// pp_map_tatep_k12(r, g1, Ppub);
 	// printf("tatep: r\n");
 	// fp12_print(r);
@@ -302,7 +302,12 @@ void test_sm9_pairing(int threads_num){
 	
 	sm9_pairing_function_test(r, Ppub, g1);
 	sm9_pairing_steps_test(r, Ppub, g1);
-	sm9_TEST(r,Ppub,g1);
+	sm9_TEST(r,Ppub,g1);	
+	// sm9_pairing_function_test(r, Ppub, g1);
+	// sm9_pairing_steps_test(r, Ppub, g1);
+	// sm9_TEST(r,Ppub,g1);
+	sm9_pairing_fast_step_test(r, Ppub, g1);
+	sm9_pairing_fast_step_test2(r, Ppub, g1);
 #endif
 
 #if 1
@@ -360,6 +365,7 @@ void test_sm9_pairing(int threads_num){
 	g1_free(g1);
 	ep2_free(Ppub);
 	fp12_free(r);
+	return 1;
 }
 
 void test_miller(){
