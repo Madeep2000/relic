@@ -87,6 +87,8 @@ ADD_MODULE(sm9)
 # 添加sm3测试模块
 ADD_MODULE(sm3)
 
+# 添加sm9 签名测试模块
+ADD_MODULE(sm9_sign)
 
 ADD_MODULE(rand)
 ADD_MODULE(core)

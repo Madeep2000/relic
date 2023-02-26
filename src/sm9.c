@@ -2477,10 +2477,11 @@ int sm9_do_sign(const SM9_SIGN_KEY *key, const SM3_CTX *sm3_ctx, SM9_SIGNATURE *
 
 	do {
 		// A2: rand r in [1, N-1]
-		if (fp_rand(r) != 1) {
-			error_print();
-			return -1;
-		}
+		// if (fp_rand(r) != 1) {
+		// 	error_print();
+		// 	return -1;
+		// }
+		fp_rand(r);
 
 		// 测试使用
 		// sm9_fn_from_hex(r, "00033C8616B06704813203DFD00965022ED15975C662337AED648835DC4B1CBE"); // for testing

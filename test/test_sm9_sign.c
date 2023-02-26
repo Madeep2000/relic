@@ -21,17 +21,17 @@ int main(void)
 	SM9_SIGN_KEY sign_key;
 	SM9_SIGN_CTX sign_ctx;
 	const char *id = "Alice";
-	uint8_t sig[SM9_SIGNATURE_SIZE];
+	uint8_t sig[104];
 	size_t siglen;
 	uint8_t buf[512];
 	uint8_t *p = buf;
 	const uint8_t *cp = buf;
 	size_t len;
 	int ret;
-
+	
 	// sm9_sign_master_key_generate(&sign_master);
-
 	// sm9_sign_master_key_extract_key(&sign_master, id, strlen(id), &sign_key);
+
 
 	sm9_sign_init(&sign_ctx);
 	sm9_sign_update(&sign_ctx, (uint8_t *)"hello world", strlen("hello world"));
