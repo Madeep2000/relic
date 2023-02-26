@@ -48,6 +48,9 @@ set(RELIC_SRCS ${CORE_SRCS})
 # 添加sm9.c
 list(APPEND RELIC_SRCS "sm9.c")
 
+# 添加sm3.c
+list(APPEND RELIC_SRCS "sm3.c")
+
 if (TESTS GREATER 0)
 	list(APPEND RELIC_SRCS "relic_test.c")
 endif()

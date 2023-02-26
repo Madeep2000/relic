@@ -84,6 +84,9 @@ endif(WITH_MPC)
 # 添加sm9测试模块
 ADD_MODULE(sm9)
 
+# 添加sm3测试模块
+ADD_MODULE(sm3)
+
 
 ADD_MODULE(rand)
 ADD_MODULE(core)
