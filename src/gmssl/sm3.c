@@ -9,9 +9,9 @@
 
 
 #include <string.h>
-#include "sm3/sm3.h"
-#include "sm3/endian.h"
-#include "sm3/error.h"
+#include "gmssl/sm3.h"
+#include "gmssl/endian.h"
+#include "gmssl/error.h"
 
 
 #ifdef SM3_SSE3

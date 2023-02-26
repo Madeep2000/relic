@@ -11,21 +11,22 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "sm3/sm3.h"
+#include "gmssl/sm3.h"
 
 
 int main(int argc, char **argv)
 {
 	SM3_CTX sm3_ctx;
-	uint8_t buf[4096];
+	uint8_t buf[4096] = {0x11, 0x22};
 	size_t len;
 	uint8_t dgst[32];
 	int i;
 
 	sm3_init(&sm3_ctx);
-	while ((len = fread(buf, 1, sizeof(buf), stdin)) > 0) {
-		sm3_update(&sm3_ctx, buf, len);
-	}
+	// while ((len = fread(buf, 1, sizeof(buf), stdin)) > 0) {
+	// 	sm3_update(&sm3_ctx, buf, len);
+	// }
+    sm3_update(&sm3_ctx, buf, 2);
 	sm3_finish(&sm3_ctx, dgst);
 
 	for (i = 0; i < sizeof(dgst); i++) {

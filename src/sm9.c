@@ -1,4 +1,5 @@
 #include "sm9.h"
+
 #include "../test/debug.h"
 
 void sm9_init(){
@@ -46,6 +47,44 @@ void sm9_clean(){
 	fp_free(SM9_ALPHA3);
 	fp_free(SM9_ALPHA4);
 	fp_free(SM9_ALPHA5);
+}
+ static void fp_to_bn(sm9_bn_t a, fp_t b){
+	uint8_t tmp_buff[32];
+	fp_write_bin(tmp_buff, 32, b);
+	uint32_t tmp32;
+	for (size_t i = 0; i < 8; i++)
+	{	
+		tmp32 = 0;
+		for (size_t j = 0; j < 4; j++)
+		{
+			tmp32 += (tmp_buff[i*4+j] << (3-j));
+		}
+		a[7-i] = tmp32;
+	}
+}
+
+static void bn_to_fp(fp_t a, sm9_bn_t b){
+	uint8_t tmp_buff[32];
+	for (size_t i = 0; i < 8; i++)
+	{
+		for (size_t j = 0; j < 4; j++)
+		{
+			tmp_buff[31-(i*4+j)] = (b[i]>>(j*8))&0xff;
+		}
+	}
+	fp_read_bin(a, tmp_buff, 32);
+}
+
+int sm9_point_to_uncompressed_octets(const ep_t *P, uint8_t octets[65])
+{
+	// fp_t x;
+	// fp_t y;
+	// sm9_point_get_xy(P, x, y);
+	octets[0] = 0x04;
+	ep_write_bin(octets, 64, P, 0);
+	// sm9_bn_to_bytes(x, octets + 1);
+	// sm9_bn_to_bytes(y, octets + 32 + 1);
+	return 1;
 }
 
 static void bn_to_bits(const sm9_bn_t a, char bits[256])
@@ -711,45 +750,51 @@ static void fp12_pow(fp12_t r, const fp12_t a, const sm9_bn_t k)
 	fp12_free(t);
 }
 
-void fp12_pow_t(fp12_t c, fp12_t a, bn_t b) {
-	fp12_t t;
 
-	if (bn_is_zero(b)) {
-		fp12_set_dig(c, 1);
-		return ;
-	}
-
-	fp12_null(t);
-
-	RLC_TRY {
-		fp12_new(t);
-
-		if (fp12_test_cyc(a)) {
-			fp12_exp_cyc(c, a, b);
-		} else {
-			fp12_copy(t, a);
-
-			for (int i = bn_bits(b) - 2; i >= 0; i--) {
-				fp12_sqr_t(t, t);
-				if (bn_get_bit(b, i)) {
-					fp12_mul_t(t, t, a);
-				}
-			}
-
-			if (bn_sign(b) == RLC_NEG) {
-				fp12_inv_t(c, t);
-			} else {
-				fp12_copy(c, t);
-			}
-		}
-	}
-	RLC_CATCH_ANY {
-		RLC_THROW(ERR_CAUGHT);
-	}
-	RLC_FINALLY {
-		fp12_free(t);
-	}
+static void fp12_pow_t(fp12_t c, fp12_t a, fp_t b){
+	sm9_bn_t tmp;
+	fp_to_bn(tmp, b);
+	fp12_pow(c, a, tmp);
 }
+// void fp12_pow_t(fp12_t c, fp12_t a, bn_t b) {
+// 	fp12_t t;
+
+// 	if (bn_is_zero(b)) {
+// 		fp12_set_dig(c, 1);
+// 		return ;
+// 	}
+
+// 	fp12_null(t);
+
+// 	RLC_TRY {
+// 		fp12_new(t);
+
+// 		if (fp12_test_cyc(a)) {
+// 			fp12_exp_cyc(c, a, b);
+// 		} else {
+// 			fp12_copy(t, a);
+
+// 			for (int i = bn_bits(b) - 2; i >= 0; i--) {
+// 				fp12_sqr_t(t, t);
+// 				if (bn_get_bit(b, i)) {
+// 					fp12_mul_t(t, t, a);
+// 				}
+// 			}
+
+// 			if (bn_sign(b) == RLC_NEG) {
+// 				fp12_inv_t(c, t);
+// 			} else {
+// 				fp12_copy(c, t);
+// 			}
+// 		}
+// 	}
+// 	RLC_CATCH_ANY {
+// 		RLC_THROW(ERR_CAUGHT);
+// 	}
+// 	RLC_FINALLY {
+// 		fp12_free(t);
+// 	}
+// }
 
 static void fp12_frobenius(fp12_t r, const fp12_t x)
 {
@@ -2209,3 +2254,288 @@ void sm9_pairing_fast_step_test2(fp12_t r, const ep2_t Q, const ep_t P){
 	return ;
 }
 
+// sm9 签名
+int sm9_sign_init(SM9_SIGN_CTX *ctx)
+{
+	const uint8_t prefix[1] = { SM9_HASH2_PREFIX };
+	sm3_init(&ctx->sm3_ctx);
+
+	// sm3_ctx以0x02开头
+	sm3_update(&ctx->sm3_ctx, prefix, sizeof(prefix));
+	return 1;
+}
+
+int sm9_sign_update(SM9_SIGN_CTX *ctx, const uint8_t *data, size_t datalen)
+{
+	sm3_update(&ctx->sm3_ctx, data, datalen);
+	return 1;
+}
+
+int sm9_sign_finish(SM9_SIGN_CTX *ctx, const SM9_SIGN_KEY *key, uint8_t *sig, size_t *siglen)
+{
+	SM9_SIGNATURE signature;
+
+	// 签名
+	if (sm9_do_sign(key, &ctx->sm3_ctx, &signature) != 1) {
+		error_print();
+		return -1;
+	}
+	*siglen = 0;
+	
+	// SM9_SIGNATURE 转成 字节数组
+	if (sm9_signature_to_der(&signature, &sig, siglen) != 1) {
+		error_print();
+		return -1;
+	}
+	return 1;
+}
+// for H1() and H2()
+// h = (Ha mod (n-1)) + 1;  h in [1, n-1], n is the curve order, Ha is 40 bytes from hash
+static const sm9_bn_t SM9_ONE = {1,0,0,0,0,0,0,0};
+static const sm9_barrett_bn_t SM9_MU_N_MINUS_ONE = {0xdfc97c31, 0x74df4fd4, 0xc9c073b0, 0x9c95d85e, 0xdcd1312c, 0x55f73aeb, 0xeb5759a6, 0x67980e0b, 0x00000001};
+static const sm9_bn_t SM9_N_MINUS_ONE = {0xd69ecf24, 0xe56ee19c, 0x18ea8bee, 0x49f2934b, 0xf58ec744, 0xd603ab4f, 0x02a3a6f1, 0xb6400000};
+
+static int sm9_barrett_bn_cmp(const sm9_barrett_bn_t a, const sm9_barrett_bn_t b)
+{
+	int i;
+	for (i = 8; i >= 0; i--) {
+		if (a[i] > b[i])
+			return 1;
+		if (a[i] < b[i])
+			return -1;
+	}
+	return 0;
+}
+
+static void sm9_barrett_bn_add(sm9_barrett_bn_t r, const sm9_barrett_bn_t a, const sm9_barrett_bn_t b)
+{
+	int i;
+	r[0] = a[0] + b[0];
+	for (i = 1; i < 9; i++) {
+		r[i] = a[i] + b[i] + (r[i-1] >> 32);
+	}
+	for (i = 0; i < 8; i++) {
+		r[i] &= 0xffffffff;
+	}
+}
+
+static void sm9_barrett_bn_sub(sm9_barrett_bn_t ret, const sm9_barrett_bn_t a, const sm9_barrett_bn_t b)
+{
+	sm9_barrett_bn_t r;
+	int i;
+	r[0] = ((uint64_t)1 << 32) + a[0] - b[0];
+	for (i = 1; i < 8; i++) {
+		r[i] = 0xffffffff + a[i] - b[i] + (r[i - 1] >> 32);
+		r[i - 1] &= 0xffffffff;
+	}
+	r[i] = a[i] - b[i] + (r[i - 1] >> 32) - 1;
+	r[i - 1] &= 0xffffffff;
+	for (i = 0; i < 9; i++) {
+		ret[i] = r[i];
+	}
+}
+
+static int sm9_bn_cmp(const sm9_bn_t a, const sm9_bn_t b)
+{
+	int i;
+	for (i = 7; i >= 0; i--) {
+		if (a[i] > b[i])
+			return 1;
+		if (a[i] < b[i])
+			return -1;
+	}
+	return 0;
+}
+
+static void sm9_bn_copy(sm9_bn_t r, const sm9_bn_t a)
+{
+	memcpy(r, a, sizeof(sm9_bn_t));
+}
+
+static void sm9_bn_sub(sm9_bn_t ret, const sm9_bn_t a, const sm9_bn_t b)
+{
+	int i;
+	sm9_bn_t r;
+	r[0] = ((uint64_t)1 << 32) + a[0] - b[0];
+	for (i = 1; i < 7; i++) {
+		r[i] = 0xffffffff + a[i] - b[i] + (r[i - 1] >> 32);
+		r[i - 1] &= 0xffffffff;
+	}
+	r[i] = a[i] - b[i] + (r[i - 1] >> 32) - 1;
+	r[i - 1] &= 0xffffffff;
+	sm9_bn_copy(ret, r);
+}
+
+void sm9_fn_from_hash(sm9_bn_t h, const uint8_t Ha[40])
+{
+	uint64_t s[18] = {0};
+	sm9_barrett_bn_t zh, zl, q;
+	uint64_t w;
+	int i, j;
+
+	sm9_bn_t h_bn;
+
+	/* s = Ha -> int */
+	for (int i = 0; i < 10; i++) {
+		for (int j = 0; j < 4; j++) {
+			s[i] <<= 8;
+			s[i] += Ha[4 * (9-i) + j];
+		}
+	}
+
+	/* zl = z mod (2^32)^9 = z[0..8]
+	 * zh = z // (2^32)^7 = z[7..15] */
+	for (i = 0; i < 9; i++) {
+		zl[i] = s[i];
+		zh[i] = s[7 + i];
+	}
+
+	/* q = zh * mu // (2^32)^9 */
+	for (i = 0; i < 18; i++) {
+		s[i] = 0;
+	}
+	for (i = 0; i < 9; i++) {
+		w = 0;
+		for (j = 0; j < 9; j++) {
+			w += s[i + j] + zh[i] * SM9_MU_N_MINUS_ONE[j]; //
+			s[i + j] = w & 0xffffffff;
+			w >>= 32;
+		}
+		s[i + 9] = w;
+	}
+	for (i = 0; i < 9; i++) {
+		q[i] = s[9 + i];
+	}
+
+	/* q = q * p mod (2^32)^9 */
+	for (i = 0; i < 18; i++) {
+		s[i] = 0;
+	}
+	for (i = 0; i < 9; i++) {
+		w = 0;
+		for (j = 0; j < 8; j++) {
+			w += s[i + j] + q[i] * SM9_N_MINUS_ONE[j];
+			s[i + j] = w & 0xffffffff;
+			w >>= 32;
+		}
+		s[i + 8] = w;
+	}
+	for (i = 0; i < 9; i++) {
+		q[i] = s[i];
+	}
+
+	/* h = zl - q (mod (2^32)^9) */
+
+	if (sm9_barrett_bn_cmp(zl, q)) {
+		sm9_barrett_bn_sub(zl, zl, q);
+	} else {
+		sm9_barrett_bn_t c = {0,0,0,0,0,0,0,0,0x100000000};
+		sm9_barrett_bn_sub(q, c, q);
+		sm9_barrett_bn_add(zl, q, zl);
+	}
+
+	for (i = 0; i < 8; i++) {
+		h_bn[i] = zl[i];
+	}
+
+	h_bn[7] += (zl[8] << 32);
+
+	/* while h >= (n-1) do: h = h - (n-1) */
+	while (sm9_bn_cmp(h_bn, SM9_N_MINUS_ONE) >= 0) {
+		sm9_bn_sub(h_bn, h_bn, SM9_N_MINUS_ONE);
+	}
+
+	// sm9_fn_add(h, h, SM9_ONE);
+	bn_to_fp(h, h_bn);
+	fp_add_dig(h, h, 1);
+}
+
+int sm9_do_sign(const SM9_SIGN_KEY *key, const SM3_CTX *sm3_ctx, SM9_SIGNATURE *sig)
+{
+	uint8_t wbuf[32 * 12];
+	SM3_CTX ctx = *sm3_ctx;
+	SM3_CTX tmp_ctx;
+	uint8_t ct1[4] = {0,0,0,1};
+	uint8_t ct2[4] = {0,0,0,2};
+	uint8_t Ha[64];
+
+	sm9_bn_t r;
+	fp12_t g;
+	ep_t SM9_P1;
+	fp_null(r);
+	fp_new(r);
+	fp12_null(g);
+	fp12_new(g);
+
+	ep_null(SM9_P1);
+	ep_new(SM9_P1);
+	
+	g1_get_gen(SM9_P1);
+
+	// A1: g = e(P1, Ppubs)
+	sm9_pairing(g, key->Ppubs, SM9_P1);
+
+	do {
+		// A2: rand r in [1, N-1]
+		if (fp_rand(r) != 1) {
+			error_print();
+			return -1;
+		}
+
+		// 测试使用
+		// sm9_fn_from_hex(r, "00033C8616B06704813203DFD00965022ED15975C662337AED648835DC4B1CBE"); // for testing
+
+		// A3: w = g^r
+		fp12_pow_t(g, g, r);
+		fp12_write_bin(wbuf, 32*12, g, 0);  // pack表示是否压缩
+
+		// A4: h = H2(M || w, N)
+		// hlen = 8*(5*bitlen(N)/32) = 8*40，8*40表示的是比特长度，也就是40字节
+		sm3_update(&ctx, wbuf, sizeof(wbuf));  // 02||w
+		tmp_ctx = ctx;
+		sm3_update(&ctx, ct1, sizeof(ct1));  // 02||w||1
+		sm3_finish(&ctx, Ha);                // Ha1
+		sm3_update(&tmp_ctx, ct2, sizeof(ct2));  // 02||w||2
+		sm3_finish(&tmp_ctx, Ha + 32);           // Ha2
+		sm9_fn_from_hash(sig->h, Ha);  // 这里的参数Ha是大小为40的uint8_t数组, sig->h = (Ha mod (n-1)) + 1;
+																																											
+		// A5: l = (r - h) mod N, if l = 0, goto A2
+		fp_sub(r, r, sig->h);
+		// sm9_fn_sub(r, r, sig->h);
+	} while (fp_is_zero(r));  // 如果r为0，返回到A2执行
+
+	// } while (sm9_fn_is_zero(r));  // 如果r为0，返回到A2执行
+
+	// A6: S = l * dsA
+	ep_mul(sig->S, r, key->ds);
+	// sm9_point_mul(&sig->S, r, &key->ds);
+
+	gmssl_secure_clear(&r, sizeof(r));
+	gmssl_secure_clear(&g, sizeof(g));
+	gmssl_secure_clear(wbuf, sizeof(wbuf));
+	gmssl_secure_clear(&tmp_ctx, sizeof(tmp_ctx));
+	gmssl_secure_clear(Ha, sizeof(Ha));
+
+	return 1;
+}
+
+int sm9_signature_to_der(const SM9_SIGNATURE *sig, uint8_t **out, size_t *outlen)
+{
+	uint8_t hbuf[32];
+	uint8_t Sbuf[65];
+	size_t len = 0;
+
+	// sm9_fn_to_bytes(sig->h, hbuf);
+	fp_write_bin(hbuf, 32, sig->h);
+	sm9_point_to_uncompressed_octets(&sig->S, Sbuf);
+
+	if (asn1_octet_string_to_der(hbuf, sizeof(hbuf), NULL, &len) != 1
+		|| asn1_bit_octets_to_der(Sbuf, sizeof(Sbuf), NULL, &len) != 1
+		|| asn1_sequence_header_to_der(len, out, outlen) != 1
+		|| asn1_octet_string_to_der(hbuf, sizeof(hbuf), out, outlen) != 1
+		|| asn1_bit_octets_to_der(Sbuf, sizeof(Sbuf), out, outlen) != 1) {
+		error_print();
+		return -1;
+	}
+	return 1;
+}
