@@ -16,6 +16,16 @@
 
 int main(void)
 {
+	if (core_init() != RLC_OK) {
+		core_clean();
+		return 1;
+	}
+
+	if (pc_param_set_any() != RLC_OK) {
+		RLC_THROW(ERR_NO_CURVE);
+		core_clean();
+		return 0;
+	}
 	// SM9_SIGN_MASTER_KEY sign_master;
 	// SM9_SIGN_MASTER_KEY sign_master_public;
 	SM9_SIGN_KEY sign_key;
