@@ -4,12 +4,8 @@
 #include <pthread.h>
 #include <omp.h>
 
-
 #include "relic_test.h"
 #include "relic_bench.h"
-
-
-
 
 /***************性能测试代码*******************/
 #include <sys/times.h>
@@ -154,7 +150,6 @@ static void performance_compare_den(const fp12_t a,const fp12_t b){
     return ;
 }
 /***************性能测试代码 end *******************/
-
 void sm9_pairing_omp_t(fp12_t r_arr[], const ep2_t Q_arr[], const ep_t P_arr[], const size_t arr_size, const size_t threads_num){
 	// omp_set_num_threads(threads_num);
 	// sm9_init();
@@ -899,8 +894,6 @@ void test_other_pairing(){
 	fp12_free(r);
 
 #if 1
-
-
 	size_t count=1000;
 	fp12_t r_arr[count];
 	g1_t g1_arr[count];
@@ -945,11 +938,6 @@ void test_other_pairing(){
 	end = omp_get_wtime();
 	printf("tate pairing run %d times, total time: %f s, one time: %f s\n", \
 			count, 1.0*(end-begin), 1.0*(end-begin)/count);
-	
-
-
-
-
 
 	for (size_t i = 0; i < count; i++)
 	{

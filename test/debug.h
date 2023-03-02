@@ -41,13 +41,13 @@ static int run_t = 0;
 #define START        0
 #define STOP         1
 
-void alarmed_t(int sig)
+static void alarmed_t(int sig)
 {
     signal(SIGALRM, alarmed_t); 
     run_t = 0;
 }
 
-double App_tminterval(int stop)
+static double App_tminterval(int stop)
 {
     double ret = 0;
     struct tms rus;
@@ -67,7 +67,7 @@ double App_tminterval(int stop)
 }
 
 // s为STOP时，返回间隔时间
-double TIME_F(int s)
+static double TIME_F(int s)
 {
     double ret = App_tminterval(s);  // 返回
     if (s == STOP)
@@ -90,4 +90,4 @@ double TIME_F(int s)
 	    func;                                                                 \
     }                                                                         \
 	time_used = TIME_F(STOP);                                                 \
-	printf("%s \n \t\t\t run %d times in %.2fs \n",prestr,count_t/second_t,time_used/second_t);
+	printf("%s run %d times in %.2fs, per second run %d times, each run takes %.2f ms\n", prestr, count_t, time_used, count_t/second_t, 1000.0/(count_t/second_t));

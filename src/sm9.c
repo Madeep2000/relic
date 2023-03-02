@@ -2272,9 +2272,13 @@ int sm9_sign_update(SM9_SIGN_CTX *ctx, const uint8_t *data, size_t datalen)
 	return 1;
 }
 
+
 int sm9_sign_finish(SM9_SIGN_CTX *ctx, const SM9_SIGN_KEY *key, uint8_t *sig, size_t *siglen)
 {
 	SM9_SIGNATURE signature;
+
+	// 测试sm_do_sign性能
+	// PERFORMANCE_TEST_NEW("sm9_do_sign", sm9_do_sign(key, &ctx->sm3_ctx, &signature));
 
 	// 签名
 	if (sm9_do_sign(key, &ctx->sm3_ctx, &signature) != 1) {
@@ -2474,11 +2478,12 @@ int sm9_do_sign(const SM9_SIGN_KEY *key, const SM3_CTX *sm3_ctx, SM9_SIGNATURE *
 	g1_get_gen(SM9_P1);
 
 	double begin, end;
-	begin = omp_get_wtime();	
+	
+	// 测试pairing性能
+	// PERFORMANCE_TEST_NEW("pairing", sm9_pairing_fast(g, key->Ppubs, SM9_P1));
+
 	// A1: g = e(P1, Ppubs)
-	sm9_pairing(g, key->Ppubs, SM9_P1);
-	end = omp_get_wtime();
-	printf("pairing part run one time: %f s\n", 1.0*(end-begin));
+	sm9_pairing_fast(g, key->Ppubs, SM9_P1);
 	do {
 		// A2: rand r in [1, N-1]
 		// if (fp_rand(r) != 1) {
@@ -2503,12 +2508,11 @@ int sm9_do_sign(const SM9_SIGN_KEY *key, const SM3_CTX *sm3_ctx, SM9_SIGNATURE *
 		sm3_update(&tmp_ctx, ct2, sizeof(ct2));  // 02||w||2
 		sm3_finish(&tmp_ctx, Ha + 32);           // Ha2
 		sm9_fn_from_hash(sig->h, Ha);  // 这里的参数Ha是大小为40的uint8_t数组, sig->h = (Ha mod (n-1)) + 1;
-																																											
+																																							
 		// A5: l = (r - h) mod N, if l = 0, goto A2
 		fp_sub(r, r, sig->h);
 		// sm9_fn_sub(r, r, sig->h);
 	} while (fp_is_zero(r));  // 如果r为0，返回到A2执行
-
 	// } while (sm9_fn_is_zero(r));  // 如果r为0，返回到A2执行
 
 	// A6: S = l * dsA
