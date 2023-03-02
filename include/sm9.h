@@ -39,6 +39,8 @@ void sm9_clean();
 
 // sm9配对算法
 void sm9_pairing(fp12_t r, const ep2_t Q, const ep_t P);
+void sm9_pairing_fast(fp12_t r, const ep2_t Q, const ep_t P);
+
 // 运行arr_size次配对算法，使用threads_num个线程运行
 void sm9_pairing_omp(fp12_t r_arr[], const ep2_t Q_arr[], const ep_t P_arr[], const size_t arr_size, const size_t threads_num);
 

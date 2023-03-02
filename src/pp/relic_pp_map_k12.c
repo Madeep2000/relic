@@ -32,7 +32,7 @@
 #include "relic_core.h"
 #include "relic_pp.h"
 #include "relic_util.h"
-
+#include "../test/debug.h"
 /*============================================================================*/
 /* Private definitions                                                        */
 /*============================================================================*/
@@ -259,6 +259,7 @@ void pp_map_tatep_k12(fp12_t r, ep_t p, ep2_t q) {
 		if (!ep_is_infty(p) && !ep2_is_infty(q)) {
 			pp_mil_lit_k12(r, t, _p, _q, 1, n);
 			pp_exp_k12(r, r);
+			// PERFORMANCE_TEST_NEW("pp_exp_k12", pp_exp_k12(r, r));
 		}
 	}
 	RLC_CATCH_ANY {

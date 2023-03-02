@@ -1,1 +1,1 @@
-cd build && cmake .. && make -j8 && ./bin/test_sm9_sign
+cd build && cmake .. && make -j8 && ./bin/test_sm9

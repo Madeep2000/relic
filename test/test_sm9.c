@@ -1,6 +1,6 @@
 #include "sm9.h"
 #include <time.h>
-//#include "debug.h"
+#include "debug.h"
 #include <pthread.h>
 #include <omp.h>
 
@@ -265,10 +265,10 @@ void test_sm9_pairing(int threads_num){
 
 	sm9_init();
 
-	sm9_clean();
-	g1_free(g1);
-	ep2_free(Ppub);
-	fp12_free(r);
+	// sm9_clean();
+	// g1_free(g1);
+	// ep2_free(Ppub);
+	// fp12_free(r);
 #if 0
 	// 测试正确性
 	sm9_pairing_fast(r, Ppub, g1);
@@ -292,12 +292,12 @@ void test_sm9_pairing(int threads_num){
 	// fp12_print(r);
 #endif
 
-// #if 0
-// 	PERFORMANCE_TEST("pairing", sm9_pairing(r, Ppub, g1), 1000);
-// 	PERFORMANCE_TEST("pp_map_tatep_k12(r, g1, Ppub)", pp_map_tatep_k12(r, g1, Ppub), 1000);
-// 	PERFORMANCE_TEST("pp_map_weilp_k12(r, g1, Ppub)", pp_map_weilp_k12(r, g1, Ppub), 1000);
-// 	PERFORMANCE_TEST("pp_map_oatep_k12(r, g1, Ppub)", pp_map_oatep_k12(r, g1, Ppub), 1000);
-// #endif
+#if 1
+	PERFORMANCE_TEST_NEW("pairing", sm9_pairing(r, Ppub, g1));
+	PERFORMANCE_TEST_NEW("pp_map_tatep_k12(r, g1, Ppub)", pp_map_tatep_k12(r, g1, Ppub));
+	PERFORMANCE_TEST_NEW("pp_map_weilp_k12(r, g1, Ppub)", pp_map_weilp_k12(r, g1, Ppub));
+	PERFORMANCE_TEST_NEW("pp_map_oatep_k12(r, g1, Ppub)", pp_map_oatep_k12(r, g1, Ppub));
+#endif
 	
 #if 0      
 	//test functions
@@ -312,7 +312,7 @@ void test_sm9_pairing(int threads_num){
 	sm9_pairing_fast_step_test2(r, Ppub, g1);
 #endif
 
-#if 1
+#if 0
 	// 测试性能
 	// PERFORMANCE_TEST("pairing", sm9_pairing(r, Ppub, g1), 1000);
 	pthread_attr_t attr; // 定义线程属性
@@ -893,7 +893,7 @@ void test_other_pairing(){
 	ep2_free(Ppub);
 	fp12_free(r);
 
-#if 1
+#if 0
 	size_t count=1000;
 	fp12_t r_arr[count];
 	g1_t g1_arr[count];
@@ -907,7 +907,7 @@ void test_other_pairing(){
 		g1_new(g1_arr[i]);
 		ep2_null(Ppub_arr[i]);
 		ep2_new(Ppub_arr[i]);
-		g1_copy(g1_arr[i], g1);
+		g1_copy(g1_arr[i], g1);z
 		ep2_copy(Ppub_arr[i], Ppub);
 	}
 	
@@ -946,7 +946,6 @@ void test_other_pairing(){
 		ep2_free(Ppub_arr[i]);
 	}
 #endif
-
 	sm9_clean();
 	g1_free(g1);
 	ep2_free(Ppub);
@@ -954,7 +953,58 @@ void test_other_pairing(){
 	return 1;
 }
 
+void test_other_pairing_new(){
+	g1_t g1;
+	ep2_t Ppub;
+	fp12_t r;
 
+	g1_null(g1);
+	g1_new(g1);
+	g1_get_gen(g1);
+
+	ep2_null(Ppub);
+	ep2_new(Ppub);
+
+	char x0[] = "29DBA116152D1F786CE843ED24A3B573414D2177386A92DD8F14D65696EA5E32";
+	char x1[] = "9F64080B3084F733E48AFF4B41B565011CE0711C5E392CFB0AB1B6791B94C408";
+	char y0[] = "41E00A53DDA532DA1A7CE027B7A46F741006E85F5CDFF0730E75C05FB4E3216D";
+	char y1[] = "69850938ABEA0112B57329F447E3A0CBAD3E2FDB1A77F335E89E1408D0EF1C25";
+	char z0[] = "1";
+	char z1[] = "0";
+
+	fp_read_str(Ppub->x[0], x0, strlen(x0), 16);
+	fp_read_str(Ppub->x[1], x1, strlen(x1), 16);
+	fp_read_str(Ppub->y[0], y0, strlen(y0), 16);
+	fp_read_str(Ppub->y[1], y1, strlen(y1), 16);
+	fp_read_str(Ppub->z[0], z0, strlen(z0), 16);
+	fp_read_str(Ppub->z[1], z1, strlen(z1), 16);
+
+	fp12_null(r);
+	fp12_new(r);
+
+	sm9_init();
+
+#if 0
+	PERFORMANCE_TEST_NEW("pairing_gmssl", sm9_pairing(r, Ppub, g1));
+	PERFORMANCE_TEST_NEW("pairing_fast", sm9_pairing_fast(r, Ppub, g1));
+	PERFORMANCE_TEST_NEW("pp_map_tatep_k12(r, g1, Ppub)", pp_map_tatep_k12(r, g1, Ppub));
+	PERFORMANCE_TEST_NEW("pp_map_weilp_k12(r, g1, Ppub)", pp_map_weilp_k12(r, g1, Ppub));
+	PERFORMANCE_TEST_NEW("pp_map_oatep_k12(r, g1, Ppub)", pp_map_oatep_k12(r, g1, Ppub));
+#endif
+
+#if 1
+	// sm9_pairing(r, Ppub, g1);
+	sm9_pairing_fast(r, Ppub, g1);
+	pp_map_tatep_k12(r, g1, Ppub);
+	// pp_map_weilp_k12(r, g1, Ppub);
+	// pp_map_oatep_k12(r, g1, Ppub);
+#endif
+	sm9_clean();
+	g1_free(g1);
+	ep2_free(Ppub);
+	fp12_free(r);
+	return 1;
+}
 
 int main(int argc, char *argv[]) {
 	if (core_init() != RLC_OK) {
@@ -970,6 +1020,12 @@ int main(int argc, char *argv[]) {
 
 	// pc_param_print();
 	// test_main();
+
+	// 单线程测试
+	// test_sm9_pairing(1);
+
+	// 多线程测试
+#if 0
 	if(argc == 1){
 		test_sm9_pairing(1);
 		test_sm9_pairing(2);
@@ -981,7 +1037,9 @@ int main(int argc, char *argv[]) {
 		int num = str2int(argv[1]);
 		test_sm9_pairing(num);
 	}
-	test_other_pairing();
+#endif
+	// test_other_pairing();
+	test_other_pairing_new();
 	//test_a_lot();
 	// test_miller();
 	//test_ep_add();

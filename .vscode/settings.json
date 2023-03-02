@@ -15,6 +15,7 @@
         "oid.h": "c",
         "sm3.h": "c",
         "mem.h": "c",
-        "test_sm9_sign": "c"
+        "test_sm9_sign": "c",
+        "debug.h": "c"
     }
 }
