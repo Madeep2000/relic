@@ -1,6 +1,6 @@
 macro(ADD_MODULE MODULE)
 	
-	SET(CMAKE_C_FLAGS " -fopenmp")
+	SET(CMAKE_C_FLAGS "-O2 -fopenmp")
 	add_executable(test_${MODULE} test_${MODULE}.c)
 	if (STLIB)
 		target_link_libraries(test_${MODULE} ${RELIC_S})
@@ -92,4 +92,4 @@ ADD_MODULE(sm9_sign)
 
 ADD_MODULE(rand)
 ADD_MODULE(core)
-set (CMAKE_C_FLAGS " -O3 ${CMAKE_C_FLAGS}")
+# set (CMAKE_C_FLAGS " -O3 ${CMAKE_C_FLAGS}")
