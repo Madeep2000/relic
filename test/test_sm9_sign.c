@@ -98,6 +98,7 @@ int main(void)
     alarm(sec);
     
     run = 1;
+/* 
     Time_F(START);
 
 	// 测每秒运行多少次
@@ -107,7 +108,7 @@ int main(void)
     }
     d = Time_F(STOP);
     printf("relic SM9_sign run %x times in %.2fs\n", count, d);
-
+*/
 	
 
 	format_bytes(stdout, 0, 0, "signature", sig, siglen);
@@ -124,11 +125,12 @@ int main(void)
 	sm9_sign_update(&sign_ctx, (uint8_t *)"hello world", strlen("hello world"));
     
 	// 测一次运行多长时间
-    Time_F(START);
+    double begin, end;
+	begin = omp_get_wtime();	
 	sm9_sign_finish(&sign_ctx, &sign_key, sig, &siglen);
-    d = Time_F(STOP);
+   	end = omp_get_wtime();
 	count = 1;
-    printf("relic SM9_sign run %x times in %.2fs\n", count, d);
+    printf("relic SM9_sign run %x times in %f s\n", count, 1.0*(end-begin));
 
 	
 

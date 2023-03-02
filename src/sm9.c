@@ -2,6 +2,7 @@
 
 #include "../test/debug.h"
 
+
 void sm9_init(){
 	// beta   = 0x6c648de5dc0a3f2cf55acc93ee0baf159f9d411806dc5177f5b21fd3da24d011
 	// alpha1 = 0x3f23ea58e5720bdb843c6cfa9c08674947c5c86e0ddd04eda91d8354377b698b
@@ -2472,9 +2473,12 @@ int sm9_do_sign(const SM9_SIGN_KEY *key, const SM3_CTX *sm3_ctx, SM9_SIGNATURE *
 	
 	g1_get_gen(SM9_P1);
 
+	double begin, end;
+	begin = omp_get_wtime();	
 	// A1: g = e(P1, Ppubs)
 	sm9_pairing(g, key->Ppubs, SM9_P1);
-
+	end = omp_get_wtime();
+	printf("pairing part run one time: %f s\n", 1.0*(end-begin));
 	do {
 		// A2: rand r in [1, N-1]
 		// if (fp_rand(r) != 1) {
