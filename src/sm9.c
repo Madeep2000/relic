@@ -88,9 +88,11 @@ int sm9_point_to_uncompressed_octets(const ep_t *P, uint8_t octets[65])
 	return 1;
 }
 
-static void bn_to_bits(const sm9_bn_t a, char bits[256])
-{
+static size_t bn_to_bits(const sm9_bn_t a, char bits[256])
+{	
+	int lowest_bit_index;
 	int i, j;
+	char *tmp = bits;
 	for (i = 7; i >= 0; i--) {
 		uint32_t w = a[i];
 		for (j = 0; j < 32; j++) {
@@ -98,6 +100,17 @@ static void bn_to_bits(const sm9_bn_t a, char bits[256])
 			w <<= 1;
 		}
 	}
+	// *bits = 0;
+	for (size_t i = 0; i < 256; i++)
+	{
+		if (tmp[i] == '1')
+		{
+			return i;
+		}
+	}
+	// printf("bits\n%s\n", tmp);
+	// printf("highest_bit_index = %d\n", highest_bit_index);
+	// return highest_bit_index;
 }
 
 // a*k = (a1, a2)*k = (a1*k, a2*k)
@@ -730,6 +743,7 @@ static void fp12_pow(fp12_t r, const fp12_t a, const sm9_bn_t k)
 {
 	char kbits[257];
 	fp12_t t;
+	int lowest_bit_index;
 	int i;
 
 	fp12_null(t);
@@ -738,12 +752,17 @@ static void fp12_pow(fp12_t r, const fp12_t a, const sm9_bn_t k)
 	// assert(sm9_bn_cmp(k, SM9_P_MINUS_ONE) < 0);
 	fp12_set_dig(t, 0);
 	
-	bn_to_bits(k, kbits);
+	lowest_bit_index = bn_to_bits(k, kbits);
 	fp12_set_dig(t, 1);
-	for (i = 0; i < 256; i++) {
+	for (i = lowest_bit_index; i < 256; i++) {
+	// for (i = 0; i < 256; i++) {
 		fp12_sqr_t(t, t);
+		// 测试fp12_sqr的性能影响
+		// fp12_sqr(t,t);
 		if (kbits[i] == '1') {
 			fp12_mul_t(t, t, a);
+			// 测试fp12_mul的性能影响
+			// fp12_mul(t, t, a);
 		}
 	}
 	fp12_copy(r, t);
@@ -1297,6 +1316,7 @@ static void sm9_final_exponent_hard_part(fp12_t r, const fp12_t f)
 	const sm9_bn_t a2 = {0xcb27659, 0x0000b98b, 0x019062ed, 0xd8000000, 0, 0, 0, 0};
 	const sm9_bn_t a3 = {0x215d941, 0x40000000, 0x2, 0, 0, 0, 0, 0};
 	const sm9_bn_t nine = {9,0,0,0,0,0,0,0};
+
 	fp12_t t0, t1, t2, t3;
 
 	fp12_null(t0);
@@ -1321,7 +1341,7 @@ static void sm9_final_exponent_hard_part(fp12_t r, const fp12_t f)
 	fp12_frobenius(t2, f);
 	fp12_mul_t(t3, t2, f);
 	fp12_pow(t3, t3, nine);
-	PERFORMANCE_TEST_NEW("fp12_pow(t3, t3, nine)",fp12_pow(t3, t3, nine));
+	// PERFORMANCE_TEST_NEW("fp12_pow(t3, t3, nine)",fp12_pow(t3, t3, nine));
 
 	fp12_mul_t(t0, t0, t3);
 	fp12_sqr_t(t3, f);
@@ -1334,8 +1354,34 @@ static void sm9_final_exponent_hard_part(fp12_t r, const fp12_t f)
 	fp12_mul_t(t1, t1, t2);
 
 	fp12_pow(t2, t1, a2);
+	// fp12_pow正确性测试
+	// printf("fp12_pow(t2, t1, a2)\n");
+	// fp12_print(t2);
+	// fp12_pow性能测试
 	// PERFORMANCE_TEST_NEW("fp12_pow(t2, t1, a2)",fp12_pow(t2, t1, a2));
-	
+#if 0
+	char a2_str[] = "11011000000000000000000000000000000000011001000001100010111011010000000000000000101110011000101100001100101100100111011001011001";
+	uint64_t a2_t[] = {0x0000b98bcb27659, 0xd8000000019062ed};
+	bn_t tmp;
+	bn_null(tmp);
+	bn_new(tmp);
+	bn_read_str(tmp, a2_str, 128, 2);
+
+	bn_print(tmp);
+
+	fp12_exp(r,t1,tmp);
+	// printf("fp12_exp\n");
+	// fp12_print(r);
+
+	fp12_exp_dig(r,t1,a2_t);
+	// printf("fp12_exp_dig\n");
+	// fp12_print(r);
+
+	// PERFORMANCE_TEST_NEW("fp12_exp(r,r,tmp)",fp12_exp(r,r,tmp));
+	// PERFORMANCE_TEST_NEW("fp12_exp_dig(r,t1,a2_t)",fp12_exp_dig(r,t1,a2));
+
+	bn_free(tmp);
+#endif
 	fp12_mul_t(t0, t2, t0);
 	fp12_frobenius3(t1, f);
 	fp12_mul_t(t1, t1, t0);
@@ -1628,7 +1674,6 @@ void sm9_pairing_fast(fp12_t r, const ep2_t Q, const ep_t P){
 
 	sm9_twist_point_neg(neg_Q,Q);
 
-
 	// b)
 	ep2_copy(T, Q);
 	fp12_set_dig(f_num, 1);
@@ -1677,7 +1722,7 @@ void sm9_pairing_fast(fp12_t r, const ep2_t Q, const ep_t P){
 	sm9_eval_g_line(g_num, g_den, T, Q2, P);  // g = g_{T,-Q2}(P)
 	fp12_mul_sparse(f_num, f_num, g_num);  // f = f * g = f * g_{T,-Q2}(P)
 	fp12_mul_sparse2(f_den, f_den, g_den);
-//	ep2_add(T, T, Q2);  // T = T - Q2
+	//	ep2_add(T, T, Q2);  // T = T - Q2
 
 	// g)
 	fp12_inv_t(f_den, f_den);  // f_den = f_den^{-1}
@@ -1686,7 +1731,6 @@ void sm9_pairing_fast(fp12_t r, const ep2_t Q, const ep_t P){
 
 	sm9_final_exponent(r, r);  // r = f^{(q^12-1)/r'}
 	// PERFORMANCE_TEST_NEW("sm9_final_exponent", sm9_final_exponent(r, r));
-	// PERFORMANCE_TEST("sm9_final_exponent", sm9_final_exponent(r, r), 1000);
 
 	ep_free(_p);
 	bn_free(n);

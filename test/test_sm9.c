@@ -227,7 +227,7 @@ void sm9_pairing_test(){
 	sm9_init();
 	
 	sm9_pairing(r, Ppub, g1);
-
+	
 	sm9_clean();
 	g1_free(g1);
 	ep2_free(Ppub);
@@ -292,7 +292,7 @@ void test_sm9_pairing(int threads_num){
 	// fp12_print(r);
 #endif
 
-#if 1
+#if 0
 	PERFORMANCE_TEST_NEW("pairing", sm9_pairing(r, Ppub, g1));
 	PERFORMANCE_TEST_NEW("pp_map_tatep_k12(r, g1, Ppub)", pp_map_tatep_k12(r, g1, Ppub));
 	PERFORMANCE_TEST_NEW("pp_map_weilp_k12(r, g1, Ppub)", pp_map_weilp_k12(r, g1, Ppub));
@@ -984,7 +984,7 @@ void test_other_pairing_new(){
 
 	sm9_init();
 
-#if 0
+#if 1
 	PERFORMANCE_TEST_NEW("pairing_gmssl", sm9_pairing(r, Ppub, g1));
 	PERFORMANCE_TEST_NEW("pairing_fast", sm9_pairing_fast(r, Ppub, g1));
 	PERFORMANCE_TEST_NEW("pp_map_tatep_k12(r, g1, Ppub)", pp_map_tatep_k12(r, g1, Ppub));
@@ -992,7 +992,7 @@ void test_other_pairing_new(){
 	PERFORMANCE_TEST_NEW("pp_map_oatep_k12(r, g1, Ppub)", pp_map_oatep_k12(r, g1, Ppub));
 #endif
 
-#if 1
+#if 0
 	// sm9_pairing(r, Ppub, g1);
 	sm9_pairing_fast(r, Ppub, g1);
 	pp_map_tatep_k12(r, g1, Ppub);
@@ -1022,7 +1022,7 @@ int main(int argc, char *argv[]) {
 	// test_main();
 
 	// 单线程测试
-	// test_sm9_pairing(1);
+	test_sm9_pairing(1);
 
 	// 多线程测试
 #if 0
