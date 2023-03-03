@@ -76,6 +76,18 @@ static void bn_to_fp(fp_t a, sm9_bn_t b){
 	fp_read_bin(a, tmp_buff, 32);
 }
 
+void bn_to_bn(bn_t a, sm9_bn_t b){
+	uint8_t tmp_buff[32];
+	for (size_t i = 0; i < 8; i++)
+	{
+		for (size_t j = 0; j < 4; j++)
+		{
+			tmp_buff[31-(i*4+j)] = (b[i]>>(j*8))&0xff;
+		}
+	}
+	bn_read_bin(a, tmp_buff, 32);
+}
+
 int sm9_point_to_uncompressed_octets(const ep_t *P, uint8_t octets[65])
 {
 	// fp_t x;

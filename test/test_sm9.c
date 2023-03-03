@@ -269,7 +269,7 @@ void test_sm9_pairing(int threads_num){
 	// g1_free(g1);
 	// ep2_free(Ppub);
 	// fp12_free(r);
-#if 0
+#if 1
 	// 测试正确性
 	sm9_pairing_fast(r, Ppub, g1);
 	printf("in: Ppub\n");
@@ -1006,6 +1006,18 @@ void test_other_pairing_new(){
 	return 1;
 }
 
+void test_bn2bn(){
+	// bn to bn 测试代码
+	const sm9_bn_t a2 = {0xcb27659, 0x0000b98b, 0x019062ed, 0xd8000000, 0, 0, 0, 0};
+	bn_t tmp111;
+	bn_null(tmp111);
+	bn_new(tmp111);
+	bn_to_bn(tmp111, a2);
+	printf("bn to bn:\n");
+	bn_print(tmp111);
+	bn_free(tmp111);
+	return 1;
+}
 int main(int argc, char *argv[]) {
 	if (core_init() != RLC_OK) {
 		core_clean();
@@ -1022,7 +1034,7 @@ int main(int argc, char *argv[]) {
 	// test_main();
 
 	// 单线程测试
-	test_sm9_pairing(1);
+	// test_sm9_pairing(1);
 
 	// 多线程测试
 #if 0
@@ -1039,7 +1051,8 @@ int main(int argc, char *argv[]) {
 	}
 #endif
 	// test_other_pairing();
-	test_other_pairing_new();
+	// test_other_pairing_new();
+	test_bn2bn();
 	//test_a_lot();
 	// test_miller();
 	//test_ep_add();
