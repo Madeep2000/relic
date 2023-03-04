@@ -494,6 +494,16 @@ void fp12_mul_sparse2(fp12_t r, fp12_t a, fp12_t b){
 	fp4_mul_fp2_v(r[1][1], a[1][1], b[0][1]);
 }
 
+void fp12_inv_cyc_t(fp12_t c, fp12_t a) {
+	fp2_copy(c[0][0],a[0][0]);
+	fp2_copy(c[1][1],a[1][1]);
+	fp2_copy(c[1][0],a[1][0]);
+
+	fp2_neg(c[0][2],a[0][2]);
+	fp2_neg(c[0][1],a[0][1]);
+	fp2_neg(c[1][2],a[1][2]);
+}
+
 void fp12_inv_t(fp12_t r, fp12_t a){
 	RLC_TRY {
 	if (fp4_is_zero(a[1][1])) {
@@ -751,6 +761,175 @@ static void fp12_set(fp12_t r, const fp4_t a0, const fp4_t a1, const fp4_t a2)
 	fp4_copy(r[1][1], a2);
 }
 
+void fp12_sqr_pck_t(fp12_t c, fp12_t a) {
+	fp2_t t0, t1, t2;
+	dv2_t u0, u1, u2, u3;
+
+	fp2_null(t0);
+	fp2_null(t1);
+	fp2_null(t2);
+	dv2_null(u0);
+	dv2_null(u1);
+	dv2_null(u2);
+	dv2_null(u3);
+
+	RLC_TRY {
+		fp2_new(t0);
+		fp2_new(t1);
+		fp2_new(t2);
+		dv2_new(u0);
+		dv2_new(u1);
+		dv2_new(u2);
+		dv2_new(u3);
+
+		fp2_sqrn_low(u0, a[1][1]);
+		fp2_sqrn_low(u1, a[1][2]);
+		fp2_addm_low(t0, a[1][1], a[1][2]);
+		fp2_sqrn_low(u2, t0);
+
+		fp2_addc_low(u3, u0, u1);
+		fp2_subc_low(u3, u2, u3);
+		fp2_rdcn_low(t0, u3);
+
+		fp2_addm_low(t1, a[0][2], a[1][0]);
+		fp2_sqrm_low(t2, t1);
+		fp2_sqrn_low(u2, a[0][2]);
+
+		fp2_norm_low(t1, t0);
+		fp2_addm_low(t0, t1, a[0][2]);
+		fp2_dblm_low(t0, t0);
+		fp2_addm_low(c[0][2], t0, t1);
+
+		fp2_norh_low(u3, u1);
+		fp2_sqrn_low(u1, a[1][0]);
+		fp2_addc_low(u3, u0, u3);
+		fp2_rdcn_low(t0, u3);
+		fp2_subm_low(t1, t0, a[1][0]);
+		fp2_dblm_low(t1, t1);
+		fp2_addm_low(c[1][0], t1, t0);
+
+		fp2_addc_low(u0, u2, u1);
+		fp2_rdcn_low(t0, u0);
+		fp2_subm_low(t0, t2, t0);
+		fp2_addm_low(t1, t0, a[1][2]);
+		fp2_dblm_low(t1, t1);
+		fp2_addm_low(c[1][2], t0, t1);
+
+		fp2_norh_low(u3, u1);
+		fp2_addc_low(u3, u2, u3);
+		fp2_rdcn_low(t0, u3);
+		fp2_subm_low(t1, t0, a[1][1]);
+		fp2_dblm_low(t1, t1);
+		fp2_addm_low(c[1][1], t1, t0);
+	} RLC_CATCH_ANY {
+		RLC_THROW(ERR_CAUGHT);
+	} RLC_FINALLY {
+		fp2_free(t0);
+		fp2_free(t1);
+		fp2_free(t2);
+		dv2_free(u0);
+		dv2_free(u1);
+		dv2_free(u2);
+		dv2_free(u3);
+	}
+}
+
+static void fp12_sqr_cyc_t(fp12_t c, fp12_t a) {
+	fp2_t t0, t1, t2;
+	dv2_t u0, u1, u2, u3;
+
+	fp2_null(t0);
+	fp2_null(t1);
+	fp2_null(t2);
+	dv2_null(u0);
+	dv2_null(u1);
+	dv2_null(u2);
+	dv2_null(u3);
+
+	RLC_TRY {
+		fp2_new(t0);
+		fp2_new(t1);
+		fp2_new(t2);
+		dv2_new(u0);
+		dv2_new(u1);
+		dv2_new(u2);
+		dv2_new(u3);
+
+		fp2_sqrn_low(u2, a[0][0]);
+		fp2_sqrn_low(u3, a[0][1]);
+		fp2_addm_low(t1, a[0][0], a[0][1]);
+
+		fp2_norh_low(u0, u3);
+		fp2_addc_low(u0, u0, u2);
+		fp2_rdcn_low(t0, u0);
+
+		fp2_sqrn_low(u1, t1);
+		fp2_addc_low(u2, u2, u3);
+		fp2_subc_low(u1, u1, u2);
+		fp2_rdcn_low(t1, u1);
+
+		fp2_subm_low(c[0][0], t0, a[0][0]);
+		fp2_addm_low(c[0][0], c[0][0], c[0][0]);
+		fp2_addm_low(c[0][0], t0, c[0][0]);
+
+		fp2_addm_low(c[0][1], t1, a[0][1]);
+		fp2_addm_low(c[0][1], c[0][1], c[0][1]);
+		fp2_addm_low(c[0][1], t1, c[0][1]);
+
+		fp2_sqrn_low(u0, a[1][1]);
+		fp2_sqrn_low(u1, a[1][2]);
+		fp2_addm_low(t0, a[1][1], a[1][2]);
+		fp2_sqrn_low(u2, t0);
+
+		fp2_addc_low(u3, u0, u1);
+		fp2_subc_low(u3, u2, u3);
+		fp2_rdcn_low(t0, u3);
+
+		fp2_addm_low(t1, a[0][2], a[1][0]);
+		fp2_sqrm_low(t2, t1);
+		fp2_sqrn_low(u2, a[0][2]);
+
+		fp2_norm_low(t1, t0);
+		fp2_addm_low(t0, t1, a[0][2]);
+		fp2_addm_low(t0, t0, t0);
+		fp2_addm_low(c[0][2], t0, t1);
+
+		fp2_norh_low(u3, u1);
+		fp2_addc_low(u3, u0, u3);
+		fp2_rdcn_low(t0, u3);
+		fp2_subm_low(t1, t0, a[1][0]);
+
+		fp2_sqrn_low(u1, a[1][0]);
+
+		fp2_addm_low(t1, t1, t1);
+		fp2_addm_low(c[1][0], t1, t0);
+
+		fp2_norh_low(u3, u1);
+		fp2_addc_low(u3, u2, u3);
+		fp2_rdcn_low(t0, u3);
+		fp2_subm_low(t1, t0, a[1][1]);
+		fp2_addm_low(t1, t1, t1);
+		fp2_addm_low(c[1][1], t1, t0);
+
+		fp2_addc_low(u0, u2, u1);
+		fp2_rdcn_low(t0, u0);
+		fp2_subm_low(t0, t2, t0);
+		fp2_addm_low(t1, t0, a[1][2]);
+		fp2_dblm_low(t1, t1);
+		fp2_addm_low(c[1][2], t0, t1);
+	} RLC_CATCH_ANY {
+		RLC_THROW(ERR_CAUGHT);
+	} RLC_FINALLY {
+		fp2_free(t0);
+		fp2_free(t1);
+		fp2_free(t2);
+		dv2_free(u0);
+		dv2_free(u1);
+		dv2_free(u2);
+		dv2_free(u3);
+	}
+}
+
 static void fp12_pow(fp12_t r, const fp12_t a, const sm9_bn_t k)
 {
 	char kbits[257];
@@ -782,51 +961,60 @@ static void fp12_pow(fp12_t r, const fp12_t a, const sm9_bn_t k)
 	fp12_free(t);
 }
 
+static void fp12_pow_t(fp12_t c, fp12_t a, bn_t b) {
+	fp12_t t;
 
-static void fp12_pow_t(fp12_t c, fp12_t a, fp_t b){
-	sm9_bn_t tmp;
-	fp_to_bn(tmp, b);
-	fp12_pow(c, a, tmp);
+	if (bn_is_zero(b)) {
+		fp12_set_dig(c, 1);
+		return;
+	}
+
+	fp12_null(t);
+
+	RLC_TRY {
+		fp12_new(t);
+
+		fp12_copy(t, a);
+
+		for (int i = bn_bits(b) - 2; i >= 0; i--) {
+			fp12_sqr_t(t, t);
+			if (bn_get_bit(b, i)) {
+				fp12_mul_t(t, t, a);
+			}
+		}
+
+		if (bn_sign(b) == RLC_NEG) {
+			fp12_inv_t(c, t);
+		} else {
+			fp12_copy(c, t);
+		}
+	}
+	RLC_CATCH_ANY {
+		RLC_THROW(ERR_CAUGHT);
+	}
+	RLC_FINALLY {
+		fp12_free(t);
+	}
 }
-// void fp12_pow_t(fp12_t c, fp12_t a, bn_t b) {
-// 	fp12_t t;
 
-// 	if (bn_is_zero(b)) {
-// 		fp12_set_dig(c, 1);
-// 		return ;
-// 	}
+void fp12_frb_t(fp12_t c, fp12_t a, int i) {
 
-// 	fp12_null(t);
+	fp12_copy(c, a);
+	for (; i % 12 > 0; i--) {
+		fp2_frb(c[0][0], c[0][0], 1);
+		fp2_frb(c[1][1], c[1][1], 1);
+		fp2_frb(c[1][0], c[1][0], 1);
+		fp2_mul_frb(c[1][1], c[1][1], 1, 2);
+		fp2_mul_frb(c[1][0], c[1][0], 1, 4);
 
-// 	RLC_TRY {
-// 		fp12_new(t);
-
-// 		if (fp12_test_cyc(a)) {
-// 			fp12_exp_cyc(c, a, b);
-// 		} else {
-// 			fp12_copy(t, a);
-
-// 			for (int i = bn_bits(b) - 2; i >= 0; i--) {
-// 				fp12_sqr_t(t, t);
-// 				if (bn_get_bit(b, i)) {
-// 					fp12_mul_t(t, t, a);
-// 				}
-// 			}
-
-// 			if (bn_sign(b) == RLC_NEG) {
-// 				fp12_inv_t(c, t);
-// 			} else {
-// 				fp12_copy(c, t);
-// 			}
-// 		}
-// 	}
-// 	RLC_CATCH_ANY {
-// 		RLC_THROW(ERR_CAUGHT);
-// 	}
-// 	RLC_FINALLY {
-// 		fp12_free(t);
-// 	}
-// }
+		fp2_frb(c[0][2], c[0][2], 1);
+		fp2_frb(c[0][1], c[0][1], 1);
+		fp2_frb(c[1][2], c[1][2], 1);
+		fp2_mul_frb(c[0][2], c[0][2], 1, 1);
+		fp2_mul_frb(c[0][1], c[0][1], 1, 3);
+		fp2_mul_frb(c[1][2], c[1][2], 1, 5);
+	}
+}
 
 static void fp12_frobenius(fp12_t r, const fp12_t x)
 {
@@ -1341,19 +1529,21 @@ static void sm9_final_exponent_hard_part(fp12_t r, const fp12_t f)
 	fp12_new(t2);
 	fp12_new(t3);
 
+
 	fp12_pow(t0, f, a3);
-	// PERFORMANCE_TEST_NEW("fp12_pow(t0, f, a3)",fp12_pow(t0, f, a3));
+
 	fp12_inv_t(t0, t0);
 	// PERFORMANCE_TEST("fp12_inv_t(t0, t0)",fp12_inv_t(t0, t0),1000);
 	fp12_frobenius(t1, t0);
-	// PERFORMANCE_TEST("fp12_frobenius(t1, t0)",fp12_frobenius(t1, t0),1000);
+	//PERFORMANCE_TEST_NEW("fp12_frobenius(t1, t0)",fp12_frobenius(t1, t0));
 	fp12_mul_t(t1, t0, t1);
 
 	fp12_mul_t(t0, t0, t1);
 	fp12_frobenius(t2, f);
+	//PERFORMANCE_TEST_NEW("fp12_frobenius(t2, f)",fp12_frobenius2(t2, f));
 	fp12_mul_t(t3, t2, f);
 	fp12_pow(t3, t3, nine);
-	// PERFORMANCE_TEST_NEW("fp12_pow(t3, t3, nine)",fp12_pow(t3, t3, nine));
+
 
 	fp12_mul_t(t0, t0, t3);
 	fp12_sqr_t(t3, f);
@@ -1362,7 +1552,7 @@ static void sm9_final_exponent_hard_part(fp12_t r, const fp12_t f)
 	fp12_sqr_t(t2, t2);
 	fp12_mul_t(t2, t2, t1);
 	fp12_frobenius2(t1, f);
-	// PERFORMANCE_TEST("fp12_frobenius2(t1, f)",fp12_frobenius2(t1, f),1000);
+	//PERFORMANCE_TEST_NEW("fp12_frobenius2(t1, f)",fp12_frobenius2(t1, f));
 	fp12_mul_t(t1, t1, t2);
 
 	fp12_pow(t2, t1, a2);
@@ -1396,6 +1586,210 @@ static void sm9_final_exponent_hard_part(fp12_t r, const fp12_t f)
 #endif
 	fp12_mul_t(t0, t2, t0);
 	fp12_frobenius3(t1, f);
+	
+	//PERFORMANCE_TEST_NEW("\nfp12_frobenius3\n",fp12_frobenius3(t1, f));
+
+	fp12_mul_t(t1, t1, t0);
+
+	fp12_copy(r, t1);
+
+	fp12_free(t0);
+	fp12_free(t1);
+	fp12_free(t2);
+	fp12_free(t3);
+}
+
+static void sm9_final_exponent_hard_parter(fp12_t r, const fp12_t f)
+{
+
+	const sm9_bn_t a2 = {0xcb27659, 0x0000b98b, 0x019062ed, 0xd8000000, 0, 0, 0, 0};
+	const sm9_bn_t a3 = {0x215d941, 0x40000000, 0x2, 0, 0, 0, 0, 0};
+	const sm9_bn_t nine = {9,0,0,0,0,0,0,0};
+
+	const bn_t a3_t;
+	const bn_t a2_t;
+	const bn_t nine_t;
+
+	bn_null(a3_t);
+	bn_null(a2_t);
+	bn_null(nine_t);
+	bn_new(a3_t);
+	bn_new(a2_t);
+	bn_new(nine_t);
+
+	bn_to_bn(a3_t,a3);
+	bn_to_bn(a2_t,a2);
+	bn_to_bn(nine_t,nine);
+
+
+	fp12_t t0, t1, t2, t3;
+
+	fp12_null(t0);
+	fp12_null(t1);
+	fp12_null(t2);
+	fp12_null(t3);
+
+	fp12_new(t0);
+	fp12_new(t1);
+	fp12_new(t2);
+	fp12_new(t3);
+
+	fp12_pow_t(t0, f, a3_t);
+
+	//PERFORMANCE_TEST_NEW("fp12_pow_t(t0, f, a3_t)",fp12_pow_t(t0, f, a3_t));
+
+	fp12_inv_t(t0, t0);
+
+	fp12_frb_t(t1,t0,1);
+	//fp12_frobenius(t1, t0);
+	
+	fp12_mul_t(t1, t0, t1);
+
+	fp12_mul_t(t0, t0, t1);
+	
+	fp12_frb_t(t2,f,1);
+	//fp12_frobenius(t2, f);
+	
+	fp12_mul_t(t3, t2, f);
+	fp12_pow_t(t3, t3, nine_t);
+
+
+	fp12_mul_t(t0, t0, t3);
+	fp12_sqr_t(t3, f);
+	fp12_sqr_t(t3, t3);
+	fp12_mul_t(t0, t0, t3);
+	fp12_sqr_t(t2, t2);
+	fp12_mul_t(t2, t2, t1);
+	
+	fp12_frb_t(t1,f,2);
+	//PERFORMANCE_TEST_NEW("fp12_frb_t(t1, f,2)",fp12_frb_t(t1, f,2));
+	//fp12_frobenius2(t1, f);
+
+	fp12_mul_t(t1, t1, t2);
+
+	fp12_pow_t(t2, t1, a2_t);
+
+
+	bn_free(tmp);
+
+	fp12_mul_t(t0, t2, t0);
+	fp12_frb_t(t1,f,3);
+	//PERFORMANCE_TEST_NEW("fp12_frb_t(t1, f,3)",fp12_frb_t(t1, f,3));
+	//fp12_frobenius3(t1,f);
+
+	fp12_mul_t(t1, t1, t0);
+
+	fp12_copy(r, t1);
+
+	fp12_free(t0);
+	fp12_free(t1);
+	fp12_free(t2);
+	fp12_free(t3);
+}
+
+static void sm9_final_exponent_hard_part_t(fp12_t r, const fp12_t f)
+{
+	// a2 = 0xd8000000019062ed0000b98b0cb27659
+	// a3 = 0x2400000000215d941
+	const sm9_bn_t a2 = {0xcb27659, 0x0000b98b, 0x019062ed, 0xd8000000, 0, 0, 0, 0};
+	const sm9_bn_t a3 = {0x215d941, 0x40000000, 0x2, 0, 0, 0, 0, 0};
+	const sm9_bn_t nine = {9,0,0,0,0,0,0,0};
+
+	const bn_t a3_t;
+	const bn_t a2_t;
+	const bn_t nine_t;
+
+	bn_null(a3_t);
+	bn_null(a2_t);
+	bn_null(nine_t);
+	bn_new(a3_t);
+	bn_new(a2_t);
+	bn_new(nine_t);
+
+	bn_to_bn(a3_t,a3);
+	bn_to_bn(a2_t,a2);
+	bn_to_bn(nine_t,nine);
+
+
+	fp12_t t0, t1, t2, t3;
+
+	fp12_null(t0);
+	fp12_null(t1);
+	fp12_null(t2);
+	fp12_null(t3);
+
+	fp12_new(t0);
+	fp12_new(t1);
+	fp12_new(t2);
+	fp12_new(t3);
+
+	fp12_pow_t(t0, f, a3_t);
+
+	//PERFORMANCE_TEST_NEW("fp12_pow_t(t0, f, a3_t)",fp12_pow_t(t0, f, a3_t));
+
+	fp12_inv_t(t0, t0);
+
+	//fp12_frb_t(t1,t0,1);
+	fp12_frobenius(t1, t0);
+	
+	fp12_mul_t(t1, t0, t1);
+
+	fp12_mul_t(t0, t0, t1);
+	
+	//fp12_frb_t(t2,f,1);
+	fp12_frobenius(t2, f);
+	
+	fp12_mul_t(t3, t2, f);
+	fp12_pow_t(t3, t3, nine_t);
+
+
+	fp12_mul_t(t0, t0, t3);
+	fp12_sqr_t(t3, f);
+	fp12_sqr_t(t3, t3);
+	fp12_mul_t(t0, t0, t3);
+	fp12_sqr_t(t2, t2);
+	fp12_mul_t(t2, t2, t1);
+	
+	//fp12_frb_t(t1,f,2);
+	//PERFORMANCE_TEST_NEW("fp12_frb_t(t1, f,2)",fp12_frb_t(t1, f,2));
+	fp12_frobenius2(t1, f);
+
+	fp12_mul_t(t1, t1, t2);
+
+	fp12_pow_t(t2, t1, a2_t);
+	// fp12_pow正确性测试
+	// printf("fp12_pow(t2, t1, a2)\n");
+	// fp12_print(t2);
+	// fp12_pow性能测试
+	// PERFORMANCE_TEST_NEW("fp12_pow(t2, t1, a2)",fp12_pow(t2, t1, a2));
+#if 0
+	char a2_str[] = "11011000000000000000000000000000000000011001000001100010111011010000000000000000101110011000101100001100101100100111011001011001";
+	uint64_t a2_t[] = {0x0000b98bcb27659, 0xd8000000019062ed};
+	bn_t tmp;
+	bn_null(tmp);
+	bn_new(tmp);
+	bn_read_str(tmp, a2_str, 128, 2);
+
+	bn_print(tmp);
+
+	fp12_exp(r,t1,tmp);
+	// printf("fp12_exp\n");
+	// fp12_print(r);
+
+	fp12_exp_dig(r,t1,a2_t);
+	// printf("fp12_exp_dig\n");
+	// fp12_print(r);
+
+	// PERFORMANCE_TEST_NEW("fp12_exp(r,r,tmp)",fp12_exp(r,r,tmp));
+	// PERFORMANCE_TEST_NEW("fp12_exp_dig(r,t1,a2_t)",fp12_exp_dig(r,t1,a2));
+
+	bn_free(tmp);
+#endif
+	fp12_mul_t(t0, t2, t0);
+	//fp12_frb_t(t1,f,3);
+	//PERFORMANCE_TEST_NEW("fp12_frb_t(t1, f,3)",fp12_frb_t(t1, f,3));
+	fp12_frobenius3(t1,f);
+
 	fp12_mul_t(t1, t1, t0);
 
 	fp12_copy(r, t1);
@@ -1418,16 +1812,81 @@ static void sm9_final_exponent(fp12_t r, const fp12_t f)
 	fp12_new(t1);
 
 	fp12_frobenius6(t0, f);
-	// PERFORMANCE_TEST("fp12_frobenius6",fp12_frobenius6(t0, f),1000);
+	
+	//PERFORMANCE_TEST_NEW("\nfp12_frobenius6\n",fp12_frobenius6(t0, f));
+
 	fp12_inv_t(t1, f);
 
 	fp12_mul_t(t0, t0, t1);
 
 	fp12_frobenius2(t1, t0);
-	// PERFORMANCE_TEST("fp12_frobenius2",fp12_frobenius2(t1, t0),1000);
+
+	//PERFORMANCE_TEST_NEW("fp12_frobenius2",fp12_frobenius2(t1, t0));
 	fp12_mul_t(t0, t0, t1);
 
 	sm9_final_exponent_hard_part(t0, t0);
+	// PERFORMANCE_TEST_NEW("sm9_final_exponent_hard_part",sm9_final_exponent_hard_part(t0, t0));
+	fp12_copy(r, t0);
+	
+	fp12_free(t0);
+	fp12_free(t1);
+}
+
+static void sm9_final_exponenter(fp12_t r, const fp12_t f)
+{
+	fp12_t t0;
+	fp12_t t1;
+
+	fp12_null(t0);
+	fp12_null(t1);
+
+	fp12_new(t0);
+	fp12_new(t1);
+
+	fp12_frb_t(t0, f,6);
+	//fp12_frobenius6(t0,f);
+
+	fp12_inv_t(t1, f);
+
+	fp12_mul_t(t0, t0, t1);
+	
+	fp12_frb_t(t1, t0,2);
+	//fp12_frobenius2(t1,t0);
+
+	fp12_mul_t(t0, t0, t1);
+
+	sm9_final_exponent_hard_parter(t0, t0);
+	// PERFORMANCE_TEST_NEW("sm9_final_exponent_hard_part",sm9_final_exponent_hard_part(t0, t0));
+	fp12_copy(r, t0);
+	
+	fp12_free(t0);
+	fp12_free(t1);
+}
+
+static void sm9_final_exponent_t(fp12_t r, const fp12_t f)
+{
+	fp12_t t0;
+	fp12_t t1;
+
+	fp12_null(t0);
+	fp12_null(t1);
+
+	fp12_new(t0);
+	fp12_new(t1);
+
+	//fp12_frb_t(t0, f,6);
+	fp12_frobenius6(t0,f);
+
+	fp12_inv_t(t1, f);
+
+	fp12_mul_t(t0, t0, t1);
+	
+	//fp12_frb_t(t1, t0,2);
+	fp12_frobenius2(t1,t0);
+
+	fp12_mul_t(t0, t0, t1);
+
+	sm9_final_exponent_hard_part_t(t0, t0);
 	// PERFORMANCE_TEST_NEW("sm9_final_exponent_hard_part",sm9_final_exponent_hard_part(t0, t0));
 	fp12_copy(r, t0);
 	
@@ -1742,6 +2201,242 @@ void sm9_pairing_fast(fp12_t r, const ep2_t Q, const ep_t P){
 	fp12_mul_t(r, f_num, f_den);  // r = f_num*f_den = f
 
 	sm9_final_exponent(r, r);  // r = f^{(q^12-1)/r'}
+	// PERFORMANCE_TEST_NEW("sm9_final_exponent", sm9_final_exponent(r, r));
+
+	ep_free(_p);
+	bn_free(n);
+	ep2_free(T);
+	ep2_free(Q1);
+	ep2_free(Q2);
+	ep2_free(ep2_tmp);
+	ep2_free(neg_Q);
+	fp12_free(f);
+	fp12_free(g);
+	fp12_free(f_num);
+	fp12_free(f_den);
+	fp12_free(g_num);
+	fp12_free(g_den);
+	fp12_free(fp12_tmp);
+	return ;
+}
+
+
+void sm9_pairing_faster(fp12_t r, const ep2_t Q, const ep_t P){
+	// a)
+	const char *abits = "00100000000000000000000000000000000000010001020200020200101000020";
+	
+	fp12_t f, g, f_num, f_den, g_num, g_den, fp12_tmp;
+	ep2_t T, Q1, Q2, ep2_tmp, neg_Q;
+	ep_t _p;
+	bn_t n;
+
+	// null
+	ep_null(_p);
+	bn_null(n);
+	ep2_null(T);
+	ep2_null(Q1);
+	ep2_null(Q2);
+	ep2_null(ep2_tmp);
+	ep2_null(neg_Q);
+	fp12_null(f);
+	fp12_null(g);
+	fp12_null(f_num);
+	fp12_null(f_den);
+	fp12_null(g_num);
+	fp12_null(g_den);
+	fp12_null(fp12_tmp);
+
+	ep_new(_p);
+	bn_new(n);
+	ep2_new(T);
+	ep2_new(Q1);
+	ep2_new(Q2);
+	ep2_new(ep2_tmp);
+	ep2_new(neg_Q);
+	fp12_new(f);
+	fp12_new(g);
+	fp12_new(f_num);
+	fp12_new(f_den);
+	fp12_new(g_num);
+	fp12_new(g_den);
+	fp12_new(fp12_tmp);
+
+	sm9_twist_point_neg(neg_Q,Q);
+
+	// b)
+	ep2_copy(T, Q);
+	fp12_set_dig(f_num, 1);
+	fp12_set_dig(f_den, 1);
+
+	for(size_t i = 0; i < strlen(abits); i++)
+	{
+		// c)
+		fp12_sqr_t(f_num, f_num);
+		fp12_sqr_t(f_den, f_den);
+
+		sm9_eval_g_tangent(g_num, g_den, T, P);
+		// PERFORMANCE_TEST("sm9_eval_g_tangent",sm9_eval_g_tangent(g_num, g_den, T, P),10000);
+
+		fp12_mul_sparse(f_num, f_num, g_num);
+		fp12_mul_sparse(f_den, f_den, g_den);
+
+		ep2_dbl_projc(T, T);
+		// c.2)
+		if (abits[i] == '1'){
+			sm9_eval_g_line(g_num, g_den, T, Q, P);
+			// PERFORMANCE_TEST("sm9_eval_g_line",sm9_eval_g_line(g_num, g_den, T, Q, P),10000);
+			fp12_mul_sparse(f_num, f_num, g_num);
+			fp12_mul_sparse2(f_den, f_den, g_den);
+
+			ep2_add_projc(T, T, Q);  // T = T + Q
+		}
+		else if(abits[i] == '2'){
+			sm9_eval_g_line(g_num, g_den, T, neg_Q, P);
+			fp12_mul_sparse(f_num, f_num, g_num);
+			fp12_mul_sparse2(f_den, f_den, g_den);
+			ep2_add_projc(T, T, neg_Q);  // T = T - Q
+		}
+	}
+	// d)
+	ep2_pi1(Q1, Q);  // Q1 = pi_q(Q)
+	ep2_pi2(Q2, Q);  // Q2 = pi_{q^2}(Q), Q2 = -Q2
+	
+	// e)
+	sm9_eval_g_line(g_num, g_den, T, Q1, P);  // g = g_{T,Q1}(P)
+	fp12_mul_sparse(f_num, f_num, g_num);  // f = f * g = f * g_{T,Q1}(P)
+	fp12_mul_sparse2(f_den, f_den, g_den);
+	ep2_add_projc(T, T, Q1);  // T = T + Q1
+
+	// f)
+	sm9_eval_g_line(g_num, g_den, T, Q2, P);  // g = g_{T,-Q2}(P)
+	fp12_mul_sparse(f_num, f_num, g_num);  // f = f * g = f * g_{T,-Q2}(P)
+	fp12_mul_sparse2(f_den, f_den, g_den);
+	//	ep2_add(T, T, Q2);  // T = T - Q2
+
+	// g)
+	fp12_inv_t(f_den, f_den);  // f_den = f_den^{-1}
+
+	fp12_mul_t(r, f_num, f_den);  // r = f_num*f_den = f
+
+	sm9_final_exponenter(r, r);  // r = f^{(q^12-1)/r'}
+	// PERFORMANCE_TEST_NEW("sm9_final_exponent", sm9_final_exponent(r, r));
+
+	ep_free(_p);
+	bn_free(n);
+	ep2_free(T);
+	ep2_free(Q1);
+	ep2_free(Q2);
+	ep2_free(ep2_tmp);
+	ep2_free(neg_Q);
+	fp12_free(f);
+	fp12_free(g);
+	fp12_free(f_num);
+	fp12_free(f_den);
+	fp12_free(g_num);
+	fp12_free(g_den);
+	fp12_free(fp12_tmp);
+	return ;
+}
+
+
+void sm9_pairing_t(fp12_t r, const ep2_t Q, const ep_t P){
+	// a)
+	const char *abits = "00100000000000000000000000000000000000010001020200020200101000020";
+	
+	fp12_t f, g, f_num, f_den, g_num, g_den, fp12_tmp;
+	ep2_t T, Q1, Q2, ep2_tmp, neg_Q;
+	ep_t _p;
+	bn_t n;
+
+	// null
+	ep_null(_p);
+	bn_null(n);
+	ep2_null(T);
+	ep2_null(Q1);
+	ep2_null(Q2);
+	ep2_null(ep2_tmp);
+	ep2_null(neg_Q);
+	fp12_null(f);
+	fp12_null(g);
+	fp12_null(f_num);
+	fp12_null(f_den);
+	fp12_null(g_num);
+	fp12_null(g_den);
+	fp12_null(fp12_tmp);
+
+	ep_new(_p);
+	bn_new(n);
+	ep2_new(T);
+	ep2_new(Q1);
+	ep2_new(Q2);
+	ep2_new(ep2_tmp);
+	ep2_new(neg_Q);
+	fp12_new(f);
+	fp12_new(g);
+	fp12_new(f_num);
+	fp12_new(f_den);
+	fp12_new(g_num);
+	fp12_new(g_den);
+	fp12_new(fp12_tmp);
+
+	sm9_twist_point_neg(neg_Q,Q);
+
+	// b)
+	ep2_copy(T, Q);
+	fp12_set_dig(f_num, 1);
+	fp12_set_dig(f_den, 1);
+
+	for(size_t i = 0; i < strlen(abits); i++)
+	{
+		// c)
+		fp12_sqr_t(f_num, f_num);
+		fp12_sqr_t(f_den, f_den);
+
+		sm9_eval_g_tangent(g_num, g_den, T, P);
+		// PERFORMANCE_TEST("sm9_eval_g_tangent",sm9_eval_g_tangent(g_num, g_den, T, P),10000);
+
+		fp12_mul_sparse(f_num, f_num, g_num);
+		fp12_mul_sparse(f_den, f_den, g_den);
+
+		ep2_dbl_projc(T, T);
+		// c.2)
+		if (abits[i] == '1'){
+			sm9_eval_g_line(g_num, g_den, T, Q, P);
+			// PERFORMANCE_TEST("sm9_eval_g_line",sm9_eval_g_line(g_num, g_den, T, Q, P),10000);
+			fp12_mul_sparse(f_num, f_num, g_num);
+			fp12_mul_sparse2(f_den, f_den, g_den);
+
+			ep2_add_projc(T, T, Q);  // T = T + Q
+		}
+		else if(abits[i] == '2'){
+			sm9_eval_g_line(g_num, g_den, T, neg_Q, P);
+			fp12_mul_sparse(f_num, f_num, g_num);
+			fp12_mul_sparse2(f_den, f_den, g_den);
+			ep2_add_projc(T, T, neg_Q);  // T = T - Q
+		}
+	}
+	// d)
+	ep2_pi1(Q1, Q);  // Q1 = pi_q(Q)
+	ep2_pi2(Q2, Q);  // Q2 = pi_{q^2}(Q), Q2 = -Q2
+	
+	// e)
+	sm9_eval_g_line(g_num, g_den, T, Q1, P);  // g = g_{T,Q1}(P)
+	fp12_mul_sparse(f_num, f_num, g_num);  // f = f * g = f * g_{T,Q1}(P)
+	fp12_mul_sparse2(f_den, f_den, g_den);
+	ep2_add_projc(T, T, Q1);  // T = T + Q1
+
+	// f)
+	sm9_eval_g_line(g_num, g_den, T, Q2, P);  // g = g_{T,-Q2}(P)
+	fp12_mul_sparse(f_num, f_num, g_num);  // f = f * g = f * g_{T,-Q2}(P)
+	fp12_mul_sparse2(f_den, f_den, g_den);
+	//	ep2_add(T, T, Q2);  // T = T - Q2
+
+	// g)
+	fp12_inv_t(f_den, f_den);  // f_den = f_den^{-1}
+
+	fp12_mul_t(r, f_num, f_den);  // r = f_num*f_den = f
+
+	sm9_final_exponent_t(r, r);  // r = f^{(q^12-1)/r'}
 	// PERFORMANCE_TEST_NEW("sm9_final_exponent", sm9_final_exponent(r, r));
 
 	ep_free(_p);
