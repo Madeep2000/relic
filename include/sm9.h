@@ -14,21 +14,32 @@
 fp_t SM9_ALPHA1, SM9_ALPHA2, SM9_ALPHA3, SM9_ALPHA4, SM9_ALPHA5;
 fp2_t SM9_BETA;
 
+#define SM9_HID_SIGN		0x01
+#define SM9_HID_EXCH		0x02
+#define SM9_HID_ENC		0x03
+
+#define SM9_HASH1_PREFIX	0x01
 #define SM9_HASH2_PREFIX	0x02
-typedef struct {
-	fp_t h;
-	ep_t S;
-} SM9_SIGNATURE;
 
 typedef uint64_t sm9_bn_t[8];
 typedef uint64_t sm9_barrett_bn_t[9];
 typedef sm9_bn_t sm9_fn_t;
 
 typedef struct {
+	bn_t h;
+	ep_t S;
+} SM9_SIGNATURE;
+
+
+typedef struct {
 	ep_t ds;
 	ep2_t Ppubs;
 } SM9_SIGN_KEY;
-	
+
+typedef struct {
+	ep2_t Ppubs; // Ppubs = ks * P2
+	bn_t ks;     // sm9_fn_t
+} SM9_SIGN_MASTER_KEY;
 
 typedef struct {
 	SM3_CTX sm3_ctx;

@@ -89,7 +89,7 @@ void test_sm9_sign_and_verify(){
 	sm9_sign_init(&sign_ctx);
 	sm9_sign_update(&sign_ctx,data, sizeof(data));
 	sm9_sign_finish(&sign_ctx, &sign_key, sig, &siglen);
-
+	format_bytes(stdout, 0, 0, "signature", sig, siglen);
 
 
 	sm9_clean();
