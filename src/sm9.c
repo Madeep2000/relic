@@ -204,6 +204,34 @@ static size_t bn_to_bits(const sm9_bn_t a, char bits[256])
 	// return highest_bit_index;
 }
 
+void master_key_init(SM9_SIGN_MASTER_KEY *key){
+	bn_null(key->ks);
+	bn_new(key->ks);
+	ep2_null(key->Ppubs);
+	ep2_new(key->Ppubs);
+	return;
+}
+
+void master_key_free(SM9_SIGN_MASTER_KEY key){
+	bn_free(key->ks);
+	ep2_free(key->Ppubs);
+	return;
+}
+
+void user_key_init(SM9_SIGN_KEY key){
+	ep_null(key->ds);
+	ep_new(key->ds);
+	ep2_null(key->Ppubs);
+	ep2_new(key->Ppubs);
+	return;
+}
+
+void user_key_free(SM9_SIGN_KEY key){
+	ep_free(key.ds);
+	ep2_free(key.Ppubs);
+	return;
+}
+
 // a*k = (a1, a2)*k = (a1*k, a2*k)
 static void fp2_mul_fp(fp2_t r, const fp2_t a, const fp_t k)
 {
@@ -3925,7 +3953,7 @@ void sm9_fn_from_hash(bn_t h, const uint8_t Ha[40])
 
 #include <stdio.h>
 
-int sm9_hash1(sm9_bn_t h1, const char *id, size_t idlen, uint8_t hid)
+int sm9_hash1(bn_t h1, const char *id, size_t idlen, uint8_t hid)
 {
 	SM3_CTX ctx;
 	uint8_t prefix[1] = { SM9_HASH1_PREFIX };
@@ -3951,32 +3979,40 @@ int sm9_hash1(sm9_bn_t h1, const char *id, size_t idlen, uint8_t hid)
 	return 1;
 }
 
-int sm9_sign_master_key_extract_key(SM9_SIGN_MASTER_KEY *msk, const char *id, size_t idlen, SM9_SIGN_KEY *key,ep_t SM9_P1)
+int sm9_sign_master_key_extract_key(SM9_SIGN_MASTER_KEY *msk, const char *id, size_t idlen, SM9_SIGN_KEY *key)
 {
-	fp_t t;
+	bn_t t,t1;
+
+	bn_null(t);
+	bn_new(t);
+	bn_null(t1);
+	bn_new(t1);
 
 	// t1 = H1(ID || hid, N) + ks
 	sm9_hash1(t, id, idlen, SM9_HID_SIGN);
-	fp_add(t, t, msk->ks);
+	bn_add(t, t, msk->ks);
 	//sm9_fn_add(t, t, msk->ks);
-	if (fp_is_zero(t)) {
+	if (bn_is_zero(t)) {
 		// 这是一个严重问题，意味着整个msk都需要作废了
 		error_print();
 		return -1;
 	}
 
 	// t2 = ks * t1^-1
-	fp_inv(t,t);
 	//sm9_fn_inv(t, t);
-	fp_mul(t, t, msk->ks);
+	bn_read_str(t1,SM9_N,strlen(SM9_N),16);
+	bn_mod_inv(t,t,t1);
+	bn_print(t);
+	bn_mul(t,t,msk->ks);
+	
 	//sm9_fn_mul(t, t, msk->ks);
-
 	// ds = t2 * P1
-	ep_mul(&key->ds,SM9_P1,t);
+	ep_mul_gen(key->ds,t);
 	//sm9_point_mul_generator(&key->ds, t);
 	ep2_copy(key->Ppubs,msk->Ppubs);
 	//key->Ppubs = msk->Ppubs;
-
+	bn_free(t);
+	bn_free(t1);
 	return 1;
 }
 
@@ -4252,6 +4288,7 @@ int sm9_do_sign(const SM9_SIGN_KEY *key, const SM3_CTX *sm3_ctx, SM9_SIGNATURE *
 	bn_free(ord);
 	fp12_free(g);
 	fp12_free(w);
+	ep_free(SM9_P1);
 	gmssl_secure_clear(wbuf, sizeof(wbuf));
 	gmssl_secure_clear(fubw, sizeof(fubw));
 	gmssl_secure_clear(&tmp_ctx, sizeof(tmp_ctx));
@@ -4282,6 +4319,11 @@ int sm9_sign_update(SM9_SIGN_CTX *ctx, const uint8_t *data, size_t datalen)
 sm9_sign_finish(SM9_SIGN_CTX *ctx, const SM9_SIGN_KEY *key, uint8_t *sig, size_t *siglen)
 {
 	SM9_SIGNATURE signature;
+	
+	bn_null(signature.h);
+	bn_new(signature.h);
+	ep_null(signature.S);
+	ep_new(signature.S);
 	// 测试sm_do_sign性能
 	// PERFORMANCE_TEST_NEW("sm9_do_sign", sm9_do_sign(key, &ctx->sm3_ctx, &signature));
 
@@ -4296,6 +4338,8 @@ sm9_sign_finish(SM9_SIGN_CTX *ctx, const SM9_SIGN_KEY *key, uint8_t *sig, size_t
 		error_print();
 		return -1;
 	}
+	bn_free(signature.h);
+	ep_free(signature.S);
 	return 1;
 }
 
