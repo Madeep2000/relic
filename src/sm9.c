@@ -137,46 +137,7 @@ void sm9_bn_from_bytes(sm9_bn_t r, const uint8_t in[32])
 	}
 }
 */
-int sm9_fn_from_bytes(sm9_fn_t a, const uint8_t in[32])
-{
-	//sm9_bn_from_bytes(a, in);
-	fp_read_bin(a,in,32);
-	return 1;
-}
 
-int sm9_bn_from_hex(sm9_bn_t r, const char hex[64])
-{
-	uint8_t buf[32];
-	size_t len;
-	if (hex_to_bytes(hex, 64, buf, &len) < 0) {
-		return -1;
-	}
-	fp_read_bin(r,buf,32);
-	//sm9_bn_from_bytes(r, buf);
-	return 1;
-}
-
-int fp_from_hex(fp_t r, const char hex[64])
-{
-	uint8_t buf[32];
-	size_t len;
-	if (hex_to_bytes(hex, 64, buf, &len) < 0) {
-		return -1;
-	}
-	fp_read_bin(r,buf,32);
-	//sm9_bn_from_bytes(r, buf);
-	return 1;
-}
-
-
-void sm9_point_from_hex(ep_t R, const char hex[65 * 2])
-{
-
-	fp_from_hex(R->x, hex);
-	fp_from_hex(R->y, hex + 65);
-	//sm9_bn_set_one(R->z);
-	fp_set_dig(R->z,1);
-}
 
 
 static size_t bn_to_bits(const sm9_bn_t a, char bits[256])
@@ -3539,8 +3500,6 @@ void sm9_pairing_fast_step_test(fp12_t r, const ep2_t Q, const ep_t P){
 	TIME_F(START);
 	for(count=0;run_t&&count<0x7fffffff;count++){
 		
-
-
 	sm9_twist_point_neg(neg_Q,Q);
 
 
@@ -3616,8 +3575,6 @@ void sm9_pairing_fast_step_test(fp12_t r, const ep2_t Q, const ep_t P){
 	d = TIME_F(STOP);
 	printf("SM9 fast RELIC Final Exp part \n\t\t\t run %d times in %.2fs \n",count/second,d/second);
 
-
-	
 	// PERFORMANCE_TEST("sm9_final_exponent", sm9_final_exponent(r, r), 1000);
 
 	ep_free(_p);
@@ -3688,10 +3645,7 @@ void sm9_pairing_fast_step_test2(fp12_t r, const ep2_t Q, const ep_t P){
 	TIME_F(START);
 	for(count=0;run_t&&count<0x7fffffff;count++){
 		
-
-
 	sm9_twist_point_neg(neg_Q,Q);
-
 
 	// b)
 	ep2_copy(T, Q);
@@ -3764,8 +3718,6 @@ void sm9_pairing_fast_step_test2(fp12_t r, const ep2_t Q, const ep_t P){
 	}
 	d = TIME_F(STOP);
 	printf("SM9 fast with slow loop RELIC Final Exp part \n\t\t\t run %d times in %.2fs \n",count/second,d/second);
-
-
 	
 	// PERFORMANCE_TEST("sm9_final_exponent", sm9_final_exponent(r, r), 1000);
 
@@ -4197,11 +4149,10 @@ int sm9_signature_from_der(SM9_SIGNATURE *sig, const uint8_t **in, size_t *inlen
 		error_print();
 		return -1;
 	}
-	if (sm9_fn_from_bytes(sig->h, h) != 1 
-		|| sm9_point_from_uncompressed_octets(&sig->S, S) != 1) {
-		error_print();
-		return -1;
-	}
+
+	bn_read_bin(sig->h,h,hlen);
+	ep_read_bin(sig->S,S,Slen);
+
 	return 1;
 }
 
@@ -4314,8 +4265,6 @@ int sm9_sign_update(SM9_SIGN_CTX *ctx, const uint8_t *data, size_t datalen)
 	return 1;
 }
 
-
-
 sm9_sign_finish(SM9_SIGN_CTX *ctx, const SM9_SIGN_KEY *key, uint8_t *sig, size_t *siglen)
 {
 	SM9_SIGNATURE signature;
@@ -4379,17 +4328,33 @@ int sm9_sign_finish_precompute_step2(SM9_SIGN_CTX *ctx, const SM9_SIGN_KEY *key,
 
 int sm9_do_verify(const SM9_SIGN_MASTER_KEY *mpk, const char *id, size_t idlen,
 	const SM3_CTX *sm3_ctx, const SM9_SIGNATURE *sig)
-{
-	sm9_bn_t h1;
-	sm9_bn_t h2;
+{	
+	bn_t h1,h2;
+	bn_null(h1);
+	bn_new(h1);
+	bn_null(h2);
+	bn_new(h2);
+
 	fp12_t g;
 	fp12_t t;
 	fp12_t u;
 	fp12_t w;
 
+	fp12_null(g);
+	fp12_null(t);
+	fp12_null(u);
+	fp12_null(w);
+	fp12_new(g);
+	fp12_new(t);
+	fp12_new(u);
+	fp12_new(w);
+
 	ep2_t P;
+	ep2_null(P);
+	ep2_new(P);
 	
 	uint8_t wbuf[32 * 12];
+	uint8_t fubw[32*12];
 	SM3_CTX ctx = *sm3_ctx;
 	SM3_CTX tmp_ctx;
 	uint8_t ct1[4] = {0,0,0,1};
@@ -4400,20 +4365,17 @@ int sm9_do_verify(const SM9_SIGN_MASTER_KEY *mpk, const char *id, size_t idlen,
 	ep_t SM9_P1;
 	ep_null(SM9_P1);
 	ep_new(SM9_P1);
-
-	ep2_t SM9_P2;
-	ep2_null(SM9_P2);
-	ep2_new(SM9_P2);
 	g1_get_gen(SM9_P1);
-	g2_get_gen(SM9_P2);
 
 	// B1: check h in [1, N-1]
 
 	// B2: check S in G1
 
 	// B3: g = e(P1, Ppubs)
-	sm9_pairing_fastest(g, &mpk->Ppubs, SM9_P1);
 
+	sm9_pairing_fastest(g, mpk->Ppubs, SM9_P1);
+	fp12_print(g);
+	printf("\nfirst\n");
 	// B4: t = g^h
 	fp12_pow_t(t, g, sig->h);
 
@@ -4421,23 +4383,25 @@ int sm9_do_verify(const SM9_SIGN_MASTER_KEY *mpk, const char *id, size_t idlen,
 	sm9_hash1(h1, id, idlen, SM9_HID_SIGN);
 	// B6: P = h1 * P2 + Ppubs
 	//sm9_twist_point_mul_generator(&P, h1);
-	bn_t h1_t;
-	bn_null(h1_t);
-	bn_new(h1_t);
-	bn_to_bn(h1_t,h1);
-	ep2_mul(&P, SM9_P2,h1_t);
-	ep2_add_full(&P, &P, &mpk->Ppubs);
+	
+	ep2_mul_gen(P,h1);
+	ep2_add(P, P, mpk->Ppubs);
 
 	// B7: u = e(S, P)
-	sm9_pairing_fastest(u, &P, &sig->S);
+	sm9_pairing_fastest(u, P, sig->S);
+	fp12_print(u);
 
 	// B8: w = u * t
 	fp12_mul_t(w, u, t);
 	//sm9_fp12_to_bytes(w, wbuf);
 	fp12_write_bin(wbuf, 32*12, w, 0);
 
+	for(int i = 0;i<384;i++){
+		fubw[(11-i/32)*32+i%32] = wbuf[i];
+	}
+
 	// B9: h2 = H2(M || w, N), check h2 == h
-	sm3_update(&ctx, wbuf, sizeof(wbuf));
+	sm3_update(&ctx, fubw, sizeof(fubw));
 	tmp_ctx = ctx;
 	sm3_update(&ctx, ct1, sizeof(ct1));
 	sm3_finish(&ctx, Ha);
@@ -4447,6 +4411,16 @@ int sm9_do_verify(const SM9_SIGN_MASTER_KEY *mpk, const char *id, size_t idlen,
 	if (bn_cmp(h2, sig->h) != 0) {
 		return 0;
 	}
+
+	bn_free(h1);
+	bn_free(h2);
+	fp12_free(g);
+	fp12_free(t);
+	fp12_free(u);
+	fp12_free(w);
+	ep_free(SM9_P1);
+	ep2_free(P);
+
 
 	return 1;
 }
@@ -4470,6 +4444,10 @@ int sm9_verify_finish(SM9_SIGN_CTX *ctx, const uint8_t *sig, size_t siglen,
 {
 	int ret;
 	SM9_SIGNATURE signature;
+	bn_null(signature.h);
+	bn_new(signature.h);
+	ep_null(signature.S);
+	ep_new(signature.S);
 
 	if (sm9_signature_from_der(&signature, &sig, &siglen) != 1
 		|| asn1_length_is_zero(siglen) != 1) {
@@ -4481,5 +4459,8 @@ int sm9_verify_finish(SM9_SIGN_CTX *ctx, const uint8_t *sig, size_t siglen,
 		error_print();
 		return -1;
 	}
+
+	bn_free(signature.h);
+	ep_free(signature.S);
 	return ret;
 }

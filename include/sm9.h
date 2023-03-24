@@ -67,4 +67,8 @@ int sm9_sign_init(SM9_SIGN_CTX *ctx);
 int sm9_sign_update(SM9_SIGN_CTX *ctx, const uint8_t *data, size_t datalen);
 int sm9_sign_finish(SM9_SIGN_CTX *ctx, const SM9_SIGN_KEY *key, uint8_t *sig, size_t *siglen);
 int sm9_do_sign(const SM9_SIGN_KEY *key, const SM3_CTX *sm3_ctx, SM9_SIGNATURE *sig);
+int sm9_verify_init(SM9_SIGN_CTX *ctx);
+int sm9_verify_update(SM9_SIGN_CTX *ctx, const uint8_t *data, size_t datalen);
+int sm9_verify_finish(SM9_SIGN_CTX *ctx, const uint8_t *sig, size_t siglen,	const SM9_SIGN_MASTER_KEY *mpk, const char *id, size_t idlen);
+
 #endif
