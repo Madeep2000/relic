@@ -13,12 +13,14 @@
 #include "sm9.h"
 #include "gmssl/error.h"
 #include "debug.h"
-
+#include <malloc.h>
 #include <sys/times.h>
 #include <unistd.h>
 #include <signal.h>
 
-void test_sm9_sign_and_verify(const uint8_t data1[],const char id1[]){
+void test_sm9_sign_and_verify(uint8_t data[],size_t datalen,char id[],size_t idlen){
+
+	uint8_t data1[20] = {0x43, 0x68, 0x69, 0x6E, 0x65, 0x73, 0x65, 0x20, 0x49, 0x42, 0x53, 0x20, 0x73, 0x74, 0x61, 0x6E, 0x64, 0x61, 0x72, 0x64};
 
 	int j = 1;
 	SM9_SIGN_KEY sign_key;
@@ -28,7 +30,7 @@ void test_sm9_sign_and_verify(const uint8_t data1[],const char id1[]){
 	master_key_init(&sign_master);
 
 	SM9_SIGN_CTX ctx;
-	const char *id = "Alice";
+	//const char *id = "Alice";
 	uint8_t sig[104];
 	size_t siglen;
 
@@ -41,18 +43,17 @@ void test_sm9_sign_and_verify(const uint8_t data1[],const char id1[]){
 	//ep2_copy(sign_master.Ppubs,Ppub);
 
 	// data = "Chinese IBS standard"
-	uint8_t data[20] = {0x43, 0x68, 0x69, 0x6E, 0x65, 0x73, 0x65, 0x20, 0x49, 0x42, 0x53, 0x20, 0x73, 0x74, 0x61, 0x6E, 0x64, 0x61, 0x72, 0x64};
-	
+		
 	// sm9_sign_master_key_generate(&sign_master);
-	sm9_sign_master_key_extract_key(&sign_master, id, strlen(id), &sign_key);
+	sm9_sign_master_key_extract_key(&sign_master, id, idlen, &sign_key);
 	sm9_sign_init(&ctx);
-	sm9_sign_update(&ctx,data, sizeof(data));
+	sm9_sign_update(&ctx,data, datalen);
 	sm9_sign_finish(&ctx, &sign_key, sig, &siglen);
 	format_bytes(stdout, 0, 0, "signature", sig, siglen);
 
 	sm9_verify_init(&ctx);
-	sm9_verify_update(&ctx, data, sizeof(data));
-	if (sm9_verify_finish(&ctx, sig, siglen, &sign_master, id, strlen(id)) != 1) goto err; ++j;
+	sm9_verify_update(&ctx, data, datalen);
+	if (sm9_verify_finish(&ctx, sig, siglen, &sign_master, id, idlen) != 1) goto err; ++j;
 	format_bytes(stdout, 0, 0, "signature", sig, siglen);
 
 	master_key_free(&sign_master);
@@ -78,9 +79,9 @@ int main(void)
 		return 0;
 	}
 	char *id = "Alice";
-	char *data =  "Chinese IBS standard";
+	uint8_t data[20] =  "Chinese IBS standard";
 	
-	test_sm9_sign_and_verify(data,id);
+	test_sm9_sign_and_verify(data,sizeof(data),id,strlen(id));
 	core_clean();
 
 	return 0;
