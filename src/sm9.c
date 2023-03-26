@@ -4375,7 +4375,7 @@ int sm9_do_verify(const SM9_SIGN_MASTER_KEY *mpk, const char *id, size_t idlen,
 
 	sm9_pairing_fastest(g, mpk->Ppubs, SM9_P1);
 	fp12_print(g);
-	printf("\nfirst\n");
+	printf("\nfirst pairing\n");
 	// B4: t = g^h
 	fp12_pow_t(t, g, sig->h);
 
@@ -4408,6 +4408,9 @@ int sm9_do_verify(const SM9_SIGN_MASTER_KEY *mpk, const char *id, size_t idlen,
 	sm3_update(&tmp_ctx, ct2, sizeof(ct2));
 	sm3_finish(&tmp_ctx, Ha + 32);
 	sm9_fn_from_hash(h2, Ha);
+	printf("h2:\n");
+	bn_print(h2);
+	printf("h2:\n");
 	if (bn_cmp(h2, sig->h) != 0) {
 		return 0;
 	}
@@ -4454,6 +4457,7 @@ int sm9_verify_finish(SM9_SIGN_CTX *ctx, const uint8_t *sig, size_t siglen,
 		error_print();
 		return -1;
 	}
+	format_bytes(stdout, 0, 0, "verified signature", sig, siglen);
 
 	if ((ret = sm9_do_verify(mpk, id, idlen, &ctx->sm3_ctx, &signature)) < 0) {
 		error_print();
