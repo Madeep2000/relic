@@ -7,6 +7,7 @@
 #include "relic.h"
 
 #include "gmssl/sm3.h"
+
 #include "gmssl/error.h"
 #include "gmssl/mem.h"
 #include "gmssl/asn1.h"
@@ -18,8 +19,18 @@ fp2_t SM9_BETA;
 #define SM9_HID_EXCH		0x02
 #define SM9_HID_ENC		0x03
 
+
 #define SM9_HASH1_PREFIX	0x01
 #define SM9_HASH2_PREFIX	0x02
+
+#define SM9_MAX_PLAINTEXT_SIZE 255
+#define SM9_MAX_CIPHERTEXT_SIZE 367 
+
+#define SM9_ENC_TYPE_XOR	0
+#define SM9_ENC_TYPE_ECB	1
+#define SM9_ENC_TYPE_CBC	2
+#define SM9_ENC_TYPE_OFB	4
+#define SM9_ENC_TYPE_CFB	8
 
 typedef uint64_t sm9_bn_t[8];
 typedef uint64_t sm9_barrett_bn_t[9];
@@ -44,6 +55,16 @@ typedef struct {
 typedef struct {
 	SM3_CTX sm3_ctx;
 } SM9_SIGN_CTX;
+
+typedef struct {
+	ep_t Ppube; // Ppube = ke * P1
+	bn_t ke;
+} SM9_ENC_MASTER_KEY;
+
+typedef struct {
+	ep_t Ppube;
+	ep2_t de;
+} SM9_ENC_KEY;
 
 void sm9_init();
 void sm9_clean();

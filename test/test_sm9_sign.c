@@ -18,9 +18,55 @@
 #include <unistd.h>
 #include <signal.h>
 
+void test_sm9_sign(){
+	const char *id = "Alice";
+	uint8_t data[20] = {0x43, 0x68, 0x69, 0x6E, 0x65, 0x73, 0x65, 0x20, 0x49, 0x42, 0x53, 0x20, 0x73, 0x74, 0x61, 0x6E, 0x64, 0x61, 0x72, 0x64};
+	int idlen = 5;
+	int datalen = 20;
+	int j = 1;
+	
+	SM9_SIGN_KEY sign_key;
+	SM9_SIGN_MASTER_KEY sign_master;
+
+	user_key_init(&sign_key);
+	master_key_init(&sign_master);
+
+	SM9_SIGN_CTX ctx;
+	//const char *id = "Alice";
+
+	uint8_t sig[104];
+	size_t siglen;
+
+	char ks[] = "130E78459D78545CB54C587E02CF480CE0B66340F319F348A1D5B1F2DC5F4";
+	
+	bn_read_str(sign_master.ks,ks,strlen(ks),16);
+
+	ep2_mul_gen(sign_master.Ppubs,sign_master.ks);
+
+		
+	// sm9_sign_master_key_generate(&sign_master);
+	sm9_sign_master_key_extract_key(&sign_master, (char *)id, idlen, &sign_key);
+	sm9_sign_init(&ctx);
+	sm9_sign_update(&ctx,data, datalen);
+	sm9_sign_finish(&ctx, &sign_key, sig, &siglen);
+	format_bytes(stdout, 0, 0, "signature", sig, siglen);
+
+	sm9_verify_init(&ctx);
+	sm9_verify_update(&ctx, data, datalen);
+	if (sm9_verify_finish(&ctx, sig, siglen, &sign_master,(char *)id, idlen) != 1) goto err; ++j;
+	format_bytes(stdout, 0, 0, "signature", sig, siglen);
+	master_key_free(&sign_master);
+	user_key_free(&sign_key);
+
+	return 1;
+err:
+	printf("%s test %d failed\n", __FUNCTION__, j);
+	error_print();
+	return -1;
+}
+
 void test_sm9_sign_and_verify(uint8_t data[],size_t datalen,char id[],size_t idlen){
 
-	printf("\n");
 	int j = 1;
 	SM9_SIGN_KEY sign_key;
 	SM9_SIGN_MASTER_KEY sign_master;
@@ -35,7 +81,9 @@ void test_sm9_sign_and_verify(uint8_t data[],size_t datalen,char id[],size_t idl
 	size_t siglen;
 
 	char ks[] = "130E78459D78545CB54C587E02CF480CE0B66340F319F348A1D5B1F2DC5F4";
+	
 	bn_read_str(sign_master.ks,ks,strlen(ks),16);
+
 	//sm9_bn_t ks = {0x1F2DC5F4,0x348A1D5B,0x340F319F,0x80CE0B66,0x87E02CF4,0x45CB54C5,0x8459D785,0x0130E7};
 	//bn_to_bn(sign_master.ks,ks);
 	ep2_mul_gen(sign_master.Ppubs,sign_master.ks);

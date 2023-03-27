@@ -90,6 +90,9 @@ ADD_MODULE(sm3)
 # 添加sm9 签名测试模块
 ADD_MODULE(sm9_sign)
 
+# 添加sm9 加解密测试模块
+ADD_MODULE(sm9_encrypt)
+
 ADD_MODULE(rand)
 ADD_MODULE(core)
 # set (CMAKE_C_FLAGS " -O3 ${CMAKE_C_FLAGS}")

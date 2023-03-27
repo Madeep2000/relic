@@ -91,7 +91,9 @@ void bn_to_bn(bn_t a, sm9_bn_t b){
 	bn_read_bin(a, tmp_buff, 32);
 }
 
-int sm9_point_to_uncompressed_octets(const ep_t *P, uint8_t octets[65])
+
+//ep_t *P
+int sm9_point_to_uncompressed_octets(const ep_t P, uint8_t octets[65])
 {
 	// fp_t x;
 	// fp_t y;
@@ -103,7 +105,8 @@ int sm9_point_to_uncompressed_octets(const ep_t *P, uint8_t octets[65])
 	return 1;
 }
 
-int sm9_point_from_uncompressed_octets(const ep_t *P, const uint8_t octets[65])
+//ep_t *P
+int sm9_point_from_uncompressed_octets(const ep_t P, const uint8_t octets[65])
 {
 	if (octets[0] != 0x04) {
 		error_print();
@@ -127,17 +130,6 @@ int sm9_point_from_uncompressed_octets(const ep_t *P, const uint8_t octets[65])
 	}*/
 	return 1;
 }
-/*
-void sm9_bn_from_bytes(sm9_bn_t r, const uint8_t in[32])
-{
-	int i;
-	for (i = 7; i >= 0; i--) {
-		r[i] = GETU32(in);
-		in += sizeof(uint32_t);
-	}
-}
-*/
-
 
 
 static size_t bn_to_bits(const sm9_bn_t a, char bits[256])
@@ -190,6 +182,34 @@ void user_key_init(SM9_SIGN_KEY key){
 void user_key_free(SM9_SIGN_KEY key){
 	ep_free(key.ds);
 	ep2_free(key.Ppubs);
+	return;
+}
+
+void enc_master_key_init(SM9_ENC_MASTER_KEY key){
+	ep_null(key.Ppube);
+	ep_new(key.Ppube);
+	bn_null(key.ke);
+	bn_new(key.ke);
+	return;
+}
+
+void enc_master_key_free(SM9_ENC_MASTER_KEY key){
+	ep_free(key.Ppube);
+	bn_free(key.ke);
+	return;
+}
+
+void enc_user_key_init(SM9_ENC_KEY key){
+	ep_null(key.Ppube);
+	ep2_null(key.de);
+	ep_new(key.Ppube);
+	ep2_new(key.de);
+	return;
+}
+
+void enc_user_key_free(SM9_ENC_KEY key){
+	ep_free(key.Ppube);
+	ep2_free(key.de);
 	return;
 }
 
@@ -2725,7 +2745,9 @@ void sm9_pairing_faster(fp12_t r, const ep2_t Q, const ep_t P){
 	return ;
 }
 
-
+/*input:ep2 ep2 
+output:fp12
+*/
 void sm9_pairing_fastest(fp12_t r, const ep2_t Q, const ep_t P){
 	// a)
 	const char *abits = "00100000000000000000000000000000000000010001020200020200101000020";
@@ -3032,10 +3054,6 @@ void sm9_pairing_function_test(fp12_t r, const ep2_t Q, const ep_t P)
 	// fp12_mul_t(f_num, f_num, g_num);
 	PERFORMANCE_TEST_NEW("SM9 multiplication improved",fp12_mul_t(f_num, f_num, g_num) );
 	PERFORMANCE_TEST_NEW("SM9 inverse ",fp12_inv_t(f_den, f_den) );
-
-
-
-
 
 
 	
@@ -3931,6 +3949,42 @@ int sm9_hash1(bn_t h1, const char *id, size_t idlen, uint8_t hid)
 	return 1;
 }
 
+
+
+int sm9_enc_master_key_extract_key(SM9_ENC_MASTER_KEY *msk, const char *id, size_t idlen,
+	SM9_ENC_KEY *key)
+{
+	bn_t t,group_order;
+
+	bn_null(t);
+	bn_new(t);
+	bn_null(group_order);
+	bn_new(group_order);
+	g1_get_ord(group_order);
+
+	// t1 = H1(ID || hid, N) + ke
+	sm9_hash1(t, id, idlen, SM9_HID_ENC);
+	bn_add(t, t, msk->ke);
+	//sm9_fn_add(t, t, msk->ks);
+	if (bn_is_zero(t)) {
+		error_print();
+		return -1;
+	}
+
+	// t2 = ke * t1^-1
+	
+	bn_mod_inv(t,t,group_order);
+	bn_mul(t,t,msk->ke);
+	
+	// de = t2 * P2
+	ep2_mul_gen(key->de,t);
+	ep_copy(key->Ppube,msk->Ppube);
+	//key->Ppube = msk->Ppube;
+	bn_free(t);
+	bn_free(group_order);
+	return 1;
+}
+
 int sm9_sign_master_key_extract_key(SM9_SIGN_MASTER_KEY *msk, const char *id, size_t idlen, SM9_SIGN_KEY *key)
 {
 	bn_t t,t1;
@@ -3954,7 +4008,6 @@ int sm9_sign_master_key_extract_key(SM9_SIGN_MASTER_KEY *msk, const char *id, si
 	//sm9_fn_inv(t, t);
 	bn_read_str(t1,SM9_N,strlen(SM9_N),16);
 	bn_mod_inv(t,t,t1);
-	bn_print(t);
 	bn_mul(t,t,msk->ks);
 	
 	//sm9_fn_mul(t, t, msk->ks);
@@ -4101,6 +4154,72 @@ int sm9_do_sign_prestep2(const SM9_SIGN_KEY *key, const SM3_CTX *sm3_ctx, SM9_SI
 	return 1;
 }
 
+//enc
+int sm9_ciphertext_to_der(const ep_t C1, const uint8_t *c2, size_t c2len,
+	const uint8_t c3[SM3_HMAC_SIZE], uint8_t **out, size_t *outlen)
+{
+	int en_type = SM9_ENC_TYPE_XOR;
+	uint8_t c1[65];
+	size_t len = 0;
+
+	ep_write_bin(c1,65,C1,0);
+	//sm9_point_to_uncompressed_octets(C1, c1);
+
+	if (asn1_int_to_der(en_type, NULL, &len) != 1
+		|| asn1_bit_octets_to_der(c1, sizeof(c1), NULL, &len) != 1
+		|| asn1_octet_string_to_der(c3, SM3_HMAC_SIZE, NULL, &len) != 1
+		|| asn1_octet_string_to_der(c2, c2len, NULL, &len) != 1
+		|| asn1_sequence_header_to_der(len, out, outlen) != 1
+		|| asn1_int_to_der(en_type, out, outlen) != 1
+		|| asn1_bit_octets_to_der(c1, sizeof(c1), out, outlen) != 1
+		|| asn1_octet_string_to_der(c3, SM3_HMAC_SIZE, out, outlen) != 1
+		|| asn1_octet_string_to_der(c2, c2len, out, outlen) != 1) {
+		error_print();
+		return -1;
+	}
+	return 1;
+}
+
+//dec
+int sm9_ciphertext_from_der(ep_t C1, const uint8_t **c2, size_t *c2len,
+	const uint8_t **c3, const uint8_t **in, size_t *inlen)
+{
+	int ret;
+	const uint8_t *d;
+	size_t dlen;
+	int en_type;
+	const uint8_t *c1;
+	size_t c1len;
+	size_t c3len;
+
+	if ((ret = asn1_sequence_from_der(&d, &dlen, in, inlen)) != 1) {
+		if (ret < 0) error_print();
+		return ret;
+	}
+	if (asn1_int_from_der(&en_type, &d, &dlen) != 1
+		|| asn1_bit_octets_from_der(&c1, &c1len, &d, &dlen) != 1
+		|| asn1_octet_string_from_der(c3, &c3len, &d, &dlen) != 1
+		|| asn1_octet_string_from_der(c2, c2len, &d, &dlen) != 1
+		|| asn1_length_is_zero(dlen) != 1) {
+		error_print();
+		return -1;
+	}
+	if (en_type != SM9_ENC_TYPE_XOR) {
+		error_print();
+		return -1;
+	}
+	if (c1len != 65) {
+		error_print();
+		return -1;
+	}
+	if (c3len != SM3_HMAC_SIZE) {
+		error_print();
+		return -1;
+	}
+	ep_read_bin(C1,c1,65);
+	return 1;
+}
+
 //sign
 int sm9_signature_to_der(const SM9_SIGNATURE *sig, uint8_t **out, size_t *outlen)
 {
@@ -4153,6 +4272,228 @@ int sm9_signature_from_der(SM9_SIGNATURE *sig, const uint8_t **in, size_t *inlen
 	bn_read_bin(sig->h,h,hlen);
 	ep_read_bin(sig->S,S,Slen);
 
+	return 1;
+}
+
+int sm9_kem_encrypt(const SM9_ENC_MASTER_KEY *mpk, const char *id, size_t idlen,
+	size_t klen, uint8_t *kbuf, ep_t C)
+{	
+	bn_t r;
+	fp12_t w;
+	bn_null(r);
+	bn_new(r);
+	fp12_null(w);
+	fp12_new(w);
+
+	ep2_t SM9_P2;
+	ep2_null(SM9_P2);
+	ep2_new(SM9_P2);
+	g2_get_gen(SM9_P2);
+
+	uint8_t wbuf[32 * 12];
+	uint8_t fubw[32 * 12];
+	uint8_t cbuf[65];
+	SM3_KDF_CTX kdf_ctx;
+
+	// A1: Q = H1(ID||hid,N) * P1 + Ppube
+	sm9_hash1(r, id, idlen, SM9_HID_ENC);
+	ep_mul_gen(C,r);
+	ep_add(C,C,mpk->Ppube);
+
+	char rr[] = "AAC0541779C8FC45E3E2CB25C12B5D2576B2129AE8BB5EE2CBE5EC9E785C";
+	
+	do {
+		// A2: rand r in [1, N-1]
+		//if (sm9_fn_rand(r) != 1) {
+		//	error_print();
+		//	return -1;
+		//}
+		bn_read_str(r,rr,strlen(rr),16);
+		// A3: C1 = r * Q
+		ep_mul(C,C,r);
+
+		ep_write_bin(cbuf,65,C,0);
+		//sm9_point_to_uncompressed_octets(C, cbuf);
+
+		// A4: g = e(Ppube, P2)
+		sm9_pairing_fastest(w,SM9_P2,mpk->Ppube);
+
+		// A5: w = g^r
+		fp12_pow_t(w, w, r);
+		fp12_write_bin(wbuf,32*12,w,0);
+		for(int i = 0;i<384;i++){
+			fubw[(11-i/32)*32+i%32] = wbuf[i];
+		}
+
+		// A6: K = KDF(C || w || ID_B, klen), if K == 0, goto A2
+		sm3_kdf_init(&kdf_ctx, klen);
+		sm3_kdf_update(&kdf_ctx, cbuf + 1, 64);
+		sm3_kdf_update(&kdf_ctx, fubw, sizeof(fubw));
+		sm3_kdf_update(&kdf_ctx, (uint8_t *)id, idlen);
+		sm3_kdf_finish(&kdf_ctx, kbuf);
+
+	} while (mem_is_zero(kbuf, klen) == 1);
+
+	bn_free(r);
+	fp12_free(w);
+	ep2_free(SM9_P2);
+	gmssl_secure_clear(wbuf, sizeof(wbuf));
+	gmssl_secure_clear(fubw, sizeof(fubw));
+	gmssl_secure_clear(&kdf_ctx, sizeof(kdf_ctx));
+
+	// A7: output (K, C)
+	return 1;
+}
+
+int sm9_kem_decrypt(const SM9_ENC_KEY *key, const char *id, size_t idlen, const ep_t C,
+	size_t klen, uint8_t *kbuf)
+{
+	fp12_t w;
+	fp12_null(w);
+	fp12_new(w);
+	uint8_t wbuf[32 * 12];
+	uint8_t fubw[32 * 12];
+	uint8_t cbuf[65];
+	SM3_KDF_CTX kdf_ctx;
+
+	// B1: check C in G1
+
+	ep_write_bin(cbuf,65,C,0);
+	//sm9_point_to_uncompressed_octets(C, cbuf);
+
+	// B2: w = e(C, de);
+
+	sm9_pairing_fastest(w, key->de, C);
+	fp12_write_bin(wbuf, 32*12, w, 0);  // pack表示是否压缩
+	// A4: h = H2(M || w, N)
+	// hlen = 8*(5*bitlen(N)/32) = 8*40，8*40表示的是比特长度，也就是40字节
+	for(int i = 0;i<384;i++){
+		fubw[(11-i/32)*32+i%32] = wbuf[i];
+	}
+
+	// B3: K = KDF(C || w || ID, klen)
+	sm3_kdf_init(&kdf_ctx, klen);
+	sm3_kdf_update(&kdf_ctx, cbuf + 1, 64);
+	sm3_kdf_update(&kdf_ctx, fubw, sizeof(fubw));
+	sm3_kdf_update(&kdf_ctx, (uint8_t *)id, idlen);
+	sm3_kdf_finish(&kdf_ctx, kbuf);
+
+	if (mem_is_zero(kbuf, klen)) {
+		error_print();
+		return -1;
+	}
+
+	fp12_free(w);
+	gmssl_secure_clear(wbuf, sizeof(wbuf));
+	gmssl_secure_clear(fubw, sizeof(fubw));
+	gmssl_secure_clear(&kdf_ctx, sizeof(kdf_ctx));
+
+	// B4: output K
+	return 1;
+}
+
+
+int sm9_do_encrypt(const SM9_ENC_MASTER_KEY *mpk, const char *id, size_t idlen,
+	const uint8_t *in, size_t inlen,
+	ep_t C1, uint8_t *c2, uint8_t c3[SM3_HMAC_SIZE])
+{
+	SM3_HMAC_CTX hmac_ctx;
+	uint8_t K[inlen + 32];
+
+	if (sm9_kem_encrypt(mpk, id, idlen, sizeof(K), K, C1) != 1) {
+		error_print();
+		return -1;
+	}
+	gmssl_memxor(c2, K, in, inlen);
+
+	//sm3_hmac(K + inlen, 32, c2, inlen, c3);
+	sm3_hmac_init(&hmac_ctx, K + inlen, SM3_HMAC_SIZE);
+	sm3_hmac_update(&hmac_ctx, c2, inlen);
+	sm3_hmac_finish(&hmac_ctx, c3);
+	gmssl_secure_clear(&hmac_ctx, sizeof(hmac_ctx));
+	return 1;
+
+}
+
+int sm9_do_decrypt(const SM9_ENC_KEY *key, const char *id, size_t idlen,
+	const ep_t C1, const uint8_t *c2, size_t c2len, const uint8_t c3[SM3_HMAC_SIZE],
+	uint8_t *out)
+{
+	SM3_HMAC_CTX hmac_ctx;
+	uint8_t k[SM9_MAX_PLAINTEXT_SIZE + SM3_HMAC_SIZE];
+	uint8_t mac[SM3_HMAC_SIZE];
+
+	if (c2len > SM9_MAX_PLAINTEXT_SIZE) {
+		error_print();
+		return -1;
+	}
+
+	if (sm9_kem_decrypt(key, id, idlen, C1, sizeof(k), k) != 1) {
+		error_print();
+		return -1;
+	}
+	//sm3_hmac(k + c2len, SM3_HMAC_SIZE, c2, c2len, mac);
+	sm3_hmac_init(&hmac_ctx, k + c2len, SM3_HMAC_SIZE);
+	sm3_hmac_update(&hmac_ctx, c2, c2len);
+	sm3_hmac_finish(&hmac_ctx, mac);
+	gmssl_secure_clear(&hmac_ctx, sizeof(hmac_ctx));
+
+	if (gmssl_secure_memcmp(c3, mac, sizeof(mac)) != 0) {
+		error_print();
+		return -1;
+	}
+	gmssl_memxor(out, k, c2, c2len);
+	return 1;
+}
+
+
+int sm9_encrypt(const SM9_ENC_MASTER_KEY *mpk, const char *id, size_t idlen,
+	const uint8_t *in, size_t inlen, uint8_t *out, size_t *outlen)
+{
+	ep_t C1;
+	ep_null(C1);
+	ep_new(C1);
+	uint8_t c2[inlen];
+	uint8_t c3[SM3_HMAC_SIZE];
+
+	if (sm9_do_encrypt(mpk, id, idlen, in, inlen, C1, c2, c3) != 1) {
+		error_print();
+		return -1;
+	}
+	*outlen = 0;
+	if (sm9_ciphertext_to_der(C1, c2, inlen, c3, &out, outlen) != 1) { // FIXME: when out == NULL	
+		error_print();
+		return -1;
+	}
+	ep_free(C1);
+	return 1;
+}
+
+int sm9_decrypt(const SM9_ENC_KEY *key, const char *id, size_t idlen,
+	const uint8_t *in, size_t inlen, uint8_t *out, size_t *outlen)
+{
+	ep_t C1;
+	ep_null(C1);
+	ep_new(C1);
+	const uint8_t *c2;
+	size_t c2len;
+	const uint8_t *c3;
+
+	if (sm9_ciphertext_from_der(C1, &c2, &c2len, &c3, &in, &inlen) != 1
+		|| asn1_length_is_zero(inlen) != 1) {
+		error_print();
+		return -1;
+	}
+
+	*outlen = c2len;
+	if (!out) {
+		return 1;
+	}
+	if (sm9_do_decrypt(key, id, idlen, C1, c2, c2len, c3, out) != 1) {
+		error_print();
+		return -1;
+	}
+	ep_free(C1);
 	return 1;
 }
 
@@ -4211,7 +4552,6 @@ int sm9_do_sign(const SM9_SIGN_KEY *key, const SM3_CTX *sm3_ctx, SM9_SIGNATURE *
 		// A4: h = H2(M || w, N)
 		// hlen = 8*(5*bitlen(N)/32) = 8*40，8*40表示的是比特长度，也就是40字节
 		
-
 		for(int i = 0;i<384;i++){
 			fubw[(11-i/32)*32+i%32] = wbuf[i];
 		}
@@ -4253,7 +4593,6 @@ int sm9_sign_init(SM9_SIGN_CTX *ctx)
 {
 	const uint8_t prefix[1] = { SM9_HASH2_PREFIX };
 	sm3_init(&ctx->sm3_ctx);
-
 	// sm3_ctx以0x02开头
 	sm3_update(&ctx->sm3_ctx, prefix, sizeof(prefix));
 	return 1;
@@ -4468,3 +4807,4 @@ int sm9_verify_finish(SM9_SIGN_CTX *ctx, const uint8_t *sig, size_t siglen,
 	ep_free(signature.S);
 	return ret;
 }
+

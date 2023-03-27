@@ -157,7 +157,6 @@ void sm9_pairing_omp_t(fp12_t r_arr[], const ep2_t Q_arr[], const ep_t P_arr[], 
 	#pragma omp parallel for num_threads(threads_num)
 	for (size_t i = 0; i < arr_size*2; i++)
 	{
-		
 		// sm9_pairing(r_arr[0], Q_arr[0], P_arr[0]);
 		g1_t g1;
 		ep2_t Ppub;
