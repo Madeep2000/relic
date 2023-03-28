@@ -65,7 +65,7 @@ err:
 	return -1;
 }
 
-void test_sm9_sign_and_verify(uint8_t data[],size_t datalen,char id[],size_t idlen){
+void test_sm9_sign_cmd(uint8_t data[],size_t datalen,char id[],size_t idlen){
 
 	int j = 1;
 	SM9_SIGN_KEY sign_key;
@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
 
 	//test_sm9_sign_and_verify(data,sizeof(data),id,strlen(id));
 
-	test_sm9_sign_and_verify(data,datalen,id,idlen);
+	test_sm9_sign_cmd(data,datalen,id,idlen);
 	core_clean();
 
     free(data);
